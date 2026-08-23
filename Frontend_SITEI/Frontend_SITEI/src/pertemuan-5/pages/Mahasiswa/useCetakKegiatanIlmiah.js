@@ -1,0 +1,520 @@
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import QRCode from 'qrcode';
+
+// ─── Konstanta Halaman ───────────────────────────────────────────
+
+const PW  = 210;
+const PH  = 297;
+const ML  = 20;
+const MR  = 20;
+const MT  = 15;
+const CW  = PW - ML - MR;
+
+// ─── Warna ───────────────────────────────────────────────────────
+
+const BLACK  = [0,   0,   0  ];
+const GRAY50 = [120, 120, 120];
+const GRAY90 = [245, 245, 245];
+
+// ─── Helpers ─────────────────────────────────────────────────────
+
+const fmtLong = (d) => {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric'
+    });
+};
+
+const fmtShort = (d) => {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('id-ID', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+};
+
+const makeQR = async (text) => {
+    try {
+        return await QRCode.toDataURL(text, {
+            width: 100, margin: 1,
+            color: { dark: '#000000', light: '#ffffff' }
+        });
+    } catch { return null; }
+};
+
+const hline = (doc, y, x1 = ML, x2 = PW - MR, w = 0.3) => {
+    doc.setDrawColor(...BLACK);
+    doc.setLineWidth(w);
+    doc.line(x1, y, x2, y);
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  FUNGSI UTAMA
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * @param {Object} opts
+ * @param {Array}  opts.activities     — data kegiatan ilmiah dalam rentang tanggal
+ * @param {Object} opts.resident       — { name, identifier, department, batch? }
+ * @param {Object} opts.konsulen       — { name, identifier }
+ *                                       HANYA konsulen pembimbing residen (DPJP penanggung jawab residen).
+ *                                       Dikirim dari modal via fallback dpjp_name kasus klinis.
+ *                                       BUKAN penanggung_jawab kegiatan ilmiah.
+ * @param {string} opts.tanggalDari    — 'YYYY-MM-DD'
+ * @param {string} opts.tanggalSampai  — 'YYYY-MM-DD'
+ */
+export const cetakKegiatanIlmiahPDF = async ({
+    activities    = [],
+    resident      = {},
+    konsulen      = {},
+    tanggalDari   = '',
+    tanggalSampai = '',
+}) => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    await drawCoverPage(doc, { activities, resident, konsulen, tanggalDari, tanggalSampai });
+
+    doc.addPage();
+    await drawTablePages(doc, { activities, resident, konsulen, tanggalDari, tanggalSampai });
+
+    const safeName = (resident.identifier || 'residen').replace(/[\s/\\]/g, '_');
+    doc.save(`Logbook_KegiatanIlmiah_${safeName}_${tanggalDari}_sd_${tanggalSampai}.pdf`);
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  HALAMAN 1 — COVER IDENTITAS
+// ─────────────────────────────────────────────────────────────────
+
+async function drawCoverPage(doc, { activities, resident, konsulen, tanggalDari, tanggalSampai }) {
+
+    // ── KOP INSTITUSI ─────────────────────────────────────────────
+    doc.setFillColor(...BLACK);
+    doc.rect(ML, MT, CW, 0.8, 'F');
+
+    const kopY = MT + 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...BLACK);
+    doc.text('KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET DAN TEKNOLOGI', PW / 2, kopY, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.text('UNIVERSITAS RIAU — FAKULTAS KEDOKTERAN', PW / 2, kopY + 6, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('PROGRAM STUDI ANESTESIOLOGI DAN TERAPI INTENSIF', PW / 2, kopY + 12, { align: 'center' });
+
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GRAY50);
+    doc.text(
+        'Kampus Bina Widya Km. 12,5 Simpang Baru Pekanbaru 28293  ·  Telepon (0761) 66596',
+        PW / 2, kopY + 17.5, { align: 'center' }
+    );
+
+    doc.setTextColor(...BLACK);
+    doc.setFillColor(...BLACK);
+    doc.rect(ML, kopY + 21, CW, 0.8, 'F');
+    doc.setLineWidth(0.2);
+    doc.line(ML, kopY + 23, PW - MR, kopY + 23);
+
+    // ── JUDUL DOKUMEN ─────────────────────────────────────────────
+    const judulY = kopY + 32;
+
+    doc.setDrawColor(...BLACK);
+    doc.setLineWidth(0.4);
+    doc.rect(ML, judulY - 6, CW, 12, 'S');
+    doc.line(ML + 120, judulY - 6, ML + 120, judulY + 6);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...BLACK);
+    doc.text('LOGBOOK KEGIATAN ILMIAH RESIDEN', ML + 60, judulY + 1.5, { align: 'center' });
+
+    doc.setFontSize(9);
+    doc.text('MEDLOG-KI', ML + 145, judulY + 1.5, { align: 'center' });
+
+    // ── BAGIAN A — IDENTITAS RESIDEN ──────────────────────────────
+    // "Konsulen / DPJP" di sini adalah DPJP pembimbing residen,
+    // bukan moderator/PJ kegiatan ilmiah (itu ada di kolom tabel halaman 2+).
+    const aY = judulY + 18;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...BLACK);
+    doc.text('A.  Identitas Residen', ML, aY);
+
+    hline(doc, aY + 3);
+
+    const labelW = 50;
+    const valueX = ML + labelW + 6;
+
+    const identData = [
+        ['Nama Lengkap',     resident.name       || '—'],
+        ['NIM / Identifier', resident.identifier  || '—'],
+        ['Program Studi',    resident.department  || 'Anestesiologi dan Terapi Intensif'],
+        // konsulen.name di sini = DPJP penanggung jawab residen (dari fallback kasus klinis)
+        // BUKAN penanggung_jawab kegiatan ilmiah
+        ['Konsulen / DPJP',  konsulen.name        || '—'],
+    ];
+
+    let iy = aY + 9;
+    identData.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...GRAY50);
+        doc.text(label, ML + 4, iy);
+        doc.text(':', ML + labelW, iy);
+        doc.setTextColor(...BLACK);
+        doc.setFont('helvetica', 'bold');
+        doc.text(String(value), valueX, iy);
+        hline(doc, iy + 2, ML, PW - MR, 0.15);
+        iy += 8;
+    });
+
+    // ── BAGIAN B — STATISTIK ──────────────────────────────────────
+    const bY = iy + 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...BLACK);
+    doc.text('B.  Rekapitulasi Kegiatan', ML, bY);
+
+    hline(doc, bY + 3);
+
+    const totalKegiatan = activities.length;
+    const totalVerified = activities.filter(a => a.status === 'verified').length;
+    const totalPending  = activities.filter(a => a.status === 'pending').length;
+    const totalRejected = activities.filter(a => a.status === 'rejected').length;
+
+    const statsData = [
+        ['Total Kegiatan Ilmiah',   String(totalKegiatan)],
+        ['Disetujui / Paraf Dosen', String(totalVerified)],
+        ['Menunggu Review',          String(totalPending)],
+        ['Ditolak',                  String(totalRejected)],
+    ];
+
+    let sy = bY + 9;
+    statsData.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...GRAY50);
+        doc.text(label, ML + 4, sy);
+        doc.text(':', ML + labelW, sy);
+        doc.setTextColor(...BLACK);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, valueX, sy);
+        hline(doc, sy + 2, ML, PW - MR, 0.15);
+        sy += 8;
+    });
+
+    // ── BAGIAN C — PERIODE ────────────────────────────────────────
+    const cY = sy + 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...BLACK);
+    doc.text('C.  Periode Laporan', ML, cY);
+
+    hline(doc, cY + 3);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY50);
+    doc.text('Dari Tanggal', ML + 4, cY + 10);
+    doc.text(':', ML + labelW, cY + 10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...BLACK);
+    doc.text(fmtLong(tanggalDari), valueX, cY + 10);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY50);
+    doc.text('Sampai Tanggal', ML + 4, cY + 18);
+    doc.text(':', ML + labelW, cY + 18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...BLACK);
+    doc.text(fmtLong(tanggalSampai), valueX, cY + 18);
+
+    hline(doc, cY + 22, ML, PW - MR, 0.15);
+
+    // ── BAGIAN D — TANDA TANGAN DIGITAL ──────────────────────────
+    // QR kiri  = residen yang bersangkutan
+    // QR kanan = konsulen / DPJP PEMBIMBING RESIDEN
+    //            (bukan moderator kegiatan — itu hanya ada di kolom tabel)
+    const dY = cY + 32;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...BLACK);
+    doc.text('D.  Tanda Tangan Digital', ML, dY);
+
+    hline(doc, dY + 3);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GRAY50);
+    doc.text(
+        'Dokumen ini ditandatangani secara digital. Scan QR Code di bawah untuk verifikasi keaslian.',
+        ML + 4, dY + 9
+    );
+
+    const ttdY    = dY + 14;
+    const ttdColW = CW / 2 - 5;
+    const qrSize  = 28;
+
+    // ── QR Residen ──
+    const qrResData = [
+        'Prodi Anestesiologi', 'RESIDEN',
+        resident.name       || '',
+        resident.identifier || '',
+        tanggalDari,
+        tanggalSampai,
+        `TOTAL:${activities.length}`,
+        'KEGIATAN_ILMIAH',
+    ].join('|');
+
+    const qrResUrl = await makeQR(qrResData);
+
+    doc.setDrawColor(...BLACK);
+    doc.setLineWidth(0.4);
+    doc.rect(ML, ttdY, ttdColW + 10, 48, 'S');
+
+    if (qrResUrl) doc.addImage(qrResUrl, 'PNG', ML + 3, ttdY + 3, qrSize, qrSize);
+
+    const rtx = ML + qrSize + 6;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...BLACK);
+    doc.text('RESIDEN DOKTER', rtx, ttdY + 8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...GRAY50);
+    doc.text('Nama:', rtx, ttdY + 15);
+    doc.setTextColor(...BLACK);
+    doc.setFont('helvetica', 'bold');
+    const resLines = doc.splitTextToSize(resident.name || '—', ttdColW - qrSize + 5);
+    doc.text(resLines, rtx, ttdY + 20);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...GRAY50);
+    doc.setFontSize(6.5);
+    doc.text('NIM:', rtx, ttdY + 30);
+    doc.setTextColor(...BLACK);
+    doc.text(resident.identifier || '—', rtx, ttdY + 35);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...GRAY50);
+    doc.text('Tanda Tangan Residen,', ML + (ttdColW + 10) / 2, ttdY + 52, { align: 'center' });
+
+    // ── QR Konsulen / DPJP Pembimbing Residen ──
+    // konsulen.name di sini adalah DPJP penanggung jawab residen
+    // yang diperoleh via fallback dpjp_name dari riwayat kasus klinis residen.
+    // Ini BERBEDA dengan penanggung_jawab di tiap baris kegiatan ilmiah
+    // yang merupakan moderator / penanggungjawab acara ilmiah itu sendiri.
+    const qrKonData = [
+        'Prodi Anestesiologi', 'KONSULEN_DPJP_PEMBIMBING',
+        konsulen.name       || '',
+        konsulen.identifier || '',
+        tanggalDari,
+        tanggalSampai,
+        `TOTAL:${activities.length}`,
+        'KEGIATAN_ILMIAH',
+    ].join('|');
+
+    const qrKonUrl = await makeQR(qrKonData);
+    const kx = ML + ttdColW + 15;
+
+    doc.setDrawColor(...BLACK);
+    doc.setLineWidth(0.4);
+    doc.rect(kx, ttdY, ttdColW + 10, 48, 'S');
+
+    if (qrKonUrl) doc.addImage(qrKonUrl, 'PNG', kx + 3, ttdY + 3, qrSize, qrSize);
+
+    const ktx = kx + qrSize + 6;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...BLACK);
+    doc.text('KONSULEN / DPJP PEMBIMBING', ktx, ttdY + 8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...GRAY50);
+    doc.text('Nama:', ktx, ttdY + 15);
+    doc.setTextColor(...BLACK);
+    doc.setFont('helvetica', 'bold');
+    const konLines = doc.splitTextToSize(konsulen.name || '—', ttdColW - qrSize + 5);
+    doc.text(konLines, ktx, ttdY + 20);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...GRAY50);
+    doc.setFontSize(6.5);
+    doc.text('NIP:', ktx, ttdY + 30);
+    doc.setTextColor(...BLACK);
+    doc.text(konsulen.identifier || '—', ktx, ttdY + 35);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...GRAY50);
+    doc.text('Tanda Tangan Konsulen / DPJP,', kx + (ttdColW + 10) / 2, ttdY + 52, { align: 'center' });
+
+    // ── Footer Cover ──────────────────────────────────────────────
+    const footerY = PH - 14;
+    hline(doc, footerY - 2, ML, PW - MR, 0.8);
+    hline(doc, footerY,     ML, PW - MR, 0.2);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...GRAY50);
+    doc.text(
+        `© ${new Date().getFullYear()} Prodi Anestesiologi · Dicetak otomatis pada ${fmtLong(new Date().toISOString())}`,
+        PW / 2, footerY + 5, { align: 'center' }
+    );
+    doc.text('Halaman 1', PW - MR, footerY + 5, { align: 'right' });
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  HALAMAN 2+ — TABEL DETAIL KEGIATAN ILMIAH
+// ─────────────────────────────────────────────────────────────────
+// Kolom "Moderator / Penanggung Jawab Kegiatan" = a.penanggung_jawab
+//   → orang/instansi yang bertanggung jawab atas kegiatan ilmiah itu sendiri
+//   → diisi residen saat input form, bisa berbeda tiap baris
+// Kolom "Konsulen / DPJP Pembimbing" = konsulen.name (satu nilai, sama semua baris)
+//   → DPJP pembimbing residen, bukan PJ kegiatan
+
+async function drawTablePages(doc, { activities, resident, konsulen, tanggalDari, tanggalSampai }) {
+
+    const drawPageHeader = () => {
+        doc.setFillColor(...BLACK);
+        doc.rect(ML, MT, CW, 0.8, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(...BLACK);
+        doc.text('DETAIL KEGIATAN ILMIAH — LOGBOOK ANESTESIOLOGI', ML, MT + 7);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...GRAY50);
+        const sub = `${resident.name || '—'}  ·  ${resident.identifier || '—'}  ·  Periode: ${fmtLong(tanggalDari)} s.d. ${fmtLong(tanggalSampai)}`;
+        doc.text(sub, ML, MT + 12);
+
+        hline(doc, MT + 14, ML, PW - MR, 0.4);
+        return MT + 18;
+    };
+
+    const drawPageFooter = (pageNum) => {
+        const fy = PH - 12;
+        hline(doc, fy,     ML, PW - MR, 0.8);
+        hline(doc, fy + 2, ML, PW - MR, 0.2);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...GRAY50);
+        doc.text('Prodi Anestesiologi · Logbook Kegiatan Ilmiah Anestesiologi dan Terapi Intensif FK UNRI', ML, fy + 6);
+        doc.text(`Halaman ${pageNum}`, PW - MR, fy + 6, { align: 'right' });
+    };
+
+    // Setiap baris: penanggung_jawab = moderator/PJ kegiatan (dari input residen)
+    //               konsulen.name   = DPJP pembimbing residen (satu nilai tetap)
+    const rows = activities.map((a, idx) => [
+        String(idx + 1),
+        fmtShort(a.tanggal),
+        a.kegiatan_ilmiah  || '—',
+        a.penanggung_jawab || '—',   // Moderator / PJ kegiatan ilmiah — bisa beda tiap baris
+        konsulen.name      || '—',   // Konsulen DPJP pembimbing residen — tetap sama semua baris
+        (a.status || 'pending').toUpperCase(),
+    ]);
+
+    const startY = drawPageHeader();
+
+    autoTable(doc, {
+        startY,
+        head: [[
+            'No',
+            'Tanggal',
+            'Kegiatan Ilmiah',
+            'Moderator / PJ Kegiatan',    // penanggung_jawab dari form input
+            'Konsulen / DPJP Pembimbing', // DPJP pembimbing residen
+            'Status',
+        ]],
+        body: rows,
+        theme: 'grid',
+
+        styles: {
+            font:        'helvetica',
+            fontSize:    7,
+            textColor:   BLACK,
+            lineColor:   BLACK,
+            lineWidth:   0.2,
+            cellPadding: { top: 2.5, right: 2.5, bottom: 2.5, left: 2.5 },
+            valign:      'top',
+            overflow:    'linebreak',
+        },
+
+        headStyles: {
+            fillColor:   GRAY90,
+            textColor:   BLACK,
+            fontStyle:   'bold',
+            fontSize:    7,
+            lineColor:   BLACK,
+            lineWidth:   0.3,
+            halign:      'center',
+            cellPadding: { top: 3, right: 2.5, bottom: 3, left: 2.5 },
+        },
+
+        alternateRowStyles: {
+            fillColor: [252, 252, 252],
+        },
+
+        columnStyles: {
+            0: { cellWidth: 8,      halign: 'center' },
+            1: { cellWidth: 22,     halign: 'center' },
+            2: { cellWidth: 'auto' },
+            3: { cellWidth: 38 },
+            4: { cellWidth: 35 },
+            5: { cellWidth: 18,     halign: 'center' },
+        },
+
+        didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === 0) {
+                data.cell.styles.halign    = 'center';
+                data.cell.styles.fontStyle = 'bold';
+            }
+        },
+
+        didDrawCell: (data) => {
+            if (data.column.index === 5 && data.section === 'body') {
+                const { x, y, width, height } = data.cell;
+                const bw = 16, bh = 6;
+                const bx = x + (width  - bw) / 2;
+                const by = y + (height - bh) / 2;
+                const status = String(data.cell.raw || '').toUpperCase();
+
+                doc.setFillColor(255, 255, 255);
+                doc.rect(bx, by, bw, bh, 'F');
+
+                doc.setDrawColor(...BLACK);
+                doc.setLineWidth(0.25);
+                doc.rect(bx, by, bw, bh, 'S');
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(5.5);
+                doc.setTextColor(...BLACK);
+                doc.text(status, bx + bw / 2, by + bh / 2 + 1, { align: 'center' });
+            }
+        },
+
+        didDrawPage: (data) => {
+            const pn = doc.internal.getCurrentPageInfo().pageNumber;
+            if (pn > 2) drawPageHeader();
+            drawPageFooter(pn);
+        },
+
+        margin: { top: MT + 18, left: ML, right: MR, bottom: 18 },
+        tableWidth: CW,
+    });
+}
+
+export default cetakKegiatanIlmiahPDF;
