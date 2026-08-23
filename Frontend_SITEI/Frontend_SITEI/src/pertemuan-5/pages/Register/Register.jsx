@@ -27,7 +27,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await axios.post("http://127.0.0.1:8000/api/register", dataForm);
+      await axios.post("https://api.sigmaeducation.id/api/register", dataForm);
       
       Swal.fire({
         icon: 'success',

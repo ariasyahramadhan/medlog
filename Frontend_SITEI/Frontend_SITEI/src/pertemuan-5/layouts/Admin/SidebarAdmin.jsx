@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { 
-  FiHome, FiUsers, FiUser, FiActivity, FiCheckSquare, FiLogOut, FiPlus 
+  FiHome, FiUsers, FiUser, FiActivity, FiCheckSquare, FiLogOut, FiPlus, FiUserPlus, FiRefreshCw 
 } from "react-icons/fi";
 
 export default function SidebarAdmin() {
@@ -12,8 +12,8 @@ export default function SidebarAdmin() {
     { name: "Beranda", icon: <FiHome />, path: "/admin/dashboard" },
     { name: "Mahasiswa", icon: <FiUsers />, path: "/admin/mahasiswa" },
     { name: "Dosen", icon: <FiUser />, path: "/admin/dosen" },
-    { name: "Monitoring", icon: <FiActivity />, path: "/admin/monitoring" },
-    { name: "Verifikasi Logbook", icon: <FiCheckSquare />, path: "/admin/verifikasi-logbook" },
+    { name: "Plotting Pembimbing", icon: <FiUserPlus />, path: "/admin/mentor" },
+    { name: "Reset Face Recognition", icon: <FiRefreshCw />, path: "/admin/reset-face" },
   ];
 
   const handleLogout = () => {

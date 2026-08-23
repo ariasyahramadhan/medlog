@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { FiSearch, FiBell } from "react-icons/fi";
+import { FiSearch } from "react-icons/fi";
 
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "https://api.sigmaeducation.id/api";
 const PLACEHOLDER_AVATAR = (name) => 
   `https://ui-avatars.com/api/?background=003178&color=fff&size=128&name=${encodeURIComponent(name || "User")}`;
 
 const resolveAvatarUrl = (avatarPath, name) => {
   if (!avatarPath) return PLACEHOLDER_AVATAR(name);
   if (avatarPath.startsWith("http")) return avatarPath;
-  return `http://localhost:8000${avatarPath}`;
+  return `https://api.sigmaeducation.id${avatarPath}`;
 };
 
 export default function NavbarMahasiswa() {
@@ -64,19 +64,12 @@ export default function NavbarMahasiswa() {
           <button className="text-[#003178] relative after:absolute after:bottom-[-22px] after:left-0 after:w-full after:h-[3px] after:bg-[#003178] after:rounded-full font-extrabold tracking-wide">
             Validation Queue
           </button>
-          <button className="hover:text-[#003178] transition-colors cursor-pointer">Notifications</button>
-          <button className="hover:text-[#003178] transition-colors cursor-pointer">Reports</button>
+          {/* Notification dan Reports telah dihapus dari sini */}
         </div>
 
         <div className="h-8 w-px bg-slate-200/60"></div>
 
         <div className="flex items-center gap-5">
-          {/* Notification Icon */}
-          <div className="relative cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-all duration-300">
-            <FiBell className="text-slate-500 text-xl" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-          </div>
-
           {/* User Display */}
           <div className="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-2xl border border-slate-200/60 cursor-pointer hover:shadow-sm hover:border-slate-300/80 transition-all duration-300">
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-blue-50 border border-blue-100 flex items-center justify-center font-extrabold text-[#003178] text-sm font-['Manrope'] shadow-sm shrink-0">

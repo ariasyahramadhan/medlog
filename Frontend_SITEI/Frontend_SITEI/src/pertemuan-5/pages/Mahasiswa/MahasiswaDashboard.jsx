@@ -1,269 +1,502 @@
-import { 
-  FiActivity, FiArrowRight, FiCheckCircle, FiClock, 
-  FiFileText, FiMail, FiShield, FiTrendingUp 
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import {
+  FiActivity, FiCheckCircle, FiClock, FiFileText,
+  FiShield, FiLoader, FiAlertTriangle, FiXCircle,
+  FiTrendingUp, FiUsers, FiBook, FiAward
 } from "react-icons/fi";
 
-export default function DashboardMahasiswa() {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+const API_URL = 'https://api.sigmaeducation.id/api';
 
+const formatTanggal = (val) => {
+  if (!val) return '—';
+  // Epoch milidetik (dari backend)
+  const d = typeof val === 'number' ? new Date(val) : new Date(val);
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const statusBadge = (status) => {
+  const map = {
+    verified: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Terverifikasi' },
+    pending:  { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   label: 'Pending'      },
+    rejected: { bg: 'bg-red-50',     text: 'text-red-700',     border: 'border-red-200',     label: 'Ditolak'      },
+  };
+  const s = map[status] || map.pending;
   return (
-    <div className="space-y-8 font-['Inter'] w-full select-none pb-6">
-      {/* Header Profile Title */}
+    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${s.bg} ${s.text} ${s.border}`}>
+      {s.label}
+    </span>
+  );
+};
+
+const feedIcon = (type) => {
+  if (type === 'softskill') return <FiUsers />;
+  return <FiCheckCircle />;
+};
+
+export default function DashboardMahasiswa() {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  const [stats, setStats] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await axios.get(`${API_URL}/mahasiswa/dashboard-stats`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      setStats(res.data);
+    } catch (err) {
+      setError({
+        status:    err?.response?.status,
+        message:   err?.response?.data?.message || 'Koneksi ke server gagal.',
+        exception: err?.response?.data?.debug_exception || null,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+
+  const getSalam = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Selamat Pagi';
+    if (h < 17) return 'Selamat Siang';
+    return 'Selamat Malam';
+  };
+
+  // ─── Loading ────────────────────────────────────────────────────────────────
+  if (isLoading) return (
+    <div className="w-full h-screen flex flex-col items-center justify-center bg-slate-50 gap-3">
+      <FiLoader className="animate-spin text-[#003178]" size={30} />
+      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Menyusun Dasbor Residen...</p>
+    </div>
+  );
+
+  // ─── Error Panel ────────────────────────────────────────────────────────────
+  if (error) return (
+    <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 p-8">
+      <div className="w-full max-w-lg bg-white border border-red-100 rounded-3xl p-8 shadow-sm space-y-4">
+        <div className="flex items-center gap-3">
+          <FiAlertTriangle className="text-red-500" size={20} />
+          <h2 className="font-black text-red-600 uppercase tracking-wide text-sm">Gagal Memuat Dasbor</h2>
+        </div>
+        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2 text-sm">
+          <p className="text-slate-500 font-bold">HTTP {error.status}</p>
+          <p className="text-slate-700 font-bold">{error.message}</p>
+          {error.exception && (
+            <p className="font-mono text-xs text-red-600 bg-red-50 p-3 rounded-xl border border-red-100 break-all">
+              {error.exception}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={fetchStats}
+          className="w-full py-3 bg-[#003178] text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-blue-800 transition-colors"
+        >
+          Coba Lagi
+        </button>
+      </div>
+    </div>
+  );
+
+  // ─── Kalkulasi turunan ──────────────────────────────────────────────────────
+  const totalLogbook      = stats.approved_count + stats.pending_count;
+  const verificationRate  = totalLogbook > 0 ? Math.round((stats.approved_count / totalLogbook) * 100) : 0;
+  const kasusRate         = stats.total_kasus > 0
+    ? Math.round((stats.verified_kasus / stats.total_kasus) * 100)
+    : 0;
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="space-y-8 font-['Inter'] w-full select-none pb-10">
+
+      {/* ── Header ── */}
       <div className="font-['Manrope']">
         <h1 className="text-3xl font-extrabold text-[#003178] mb-1.5 tracking-tight">
-          Selamat Pagi, {user?.name || "Ariful Fikri"}
+          {getSalam()}, {user?.name || 'Dokter Residen'}
         </h1>
-        <p className="font-['Inter'] text-sm font-medium text-slate-500">
-          Lacak kemajuan rotasi klinis dan verifikasi logbook harian Anda
+        <p className="text-sm font-medium text-slate-500">
+          Lacak kemajuan rotasi klinis dan verifikasi logbook harian Anda secara real-time
         </p>
       </div>
 
-      {/* Bento Stats Grid - Stretch Full Width */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
+      {/* ── Stat Cards (4 kolom) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 w-full">
+
         {/* Total Kasus */}
-        <div className="bg-white p-7 rounded-[24px] shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex flex-col justify-between w-full">
+        <div className="bg-white p-7 rounded-[24px] shadow-sm border border-slate-200/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
           <div className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#003178] text-2xl">
+            <div className="w-11 h-11 bg-blue-50 rounded-2xl flex items-center justify-center text-[#003178] text-xl">
               <FiFileText />
             </div>
-            <span className="text-[11px] font-extrabold text-green-600 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
-              +12 Hari ini
+            <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+              Logbook
             </span>
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Kasus</p>
-            <h2 className="font-['Manrope'] font-extrabold text-slate-900 text-[32px] leading-none">1,015</h2>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Kasus Diinput</p>
+            <h2 className="font-['Manrope'] font-extrabold text-slate-900 text-[36px] leading-none">
+              {stats.total_kasus.toLocaleString('id-ID')}
+            </h2>
+            <p className="text-[10px] text-slate-400 font-bold mt-2">
+              <span className="text-emerald-600">{stats.verified_kasus} terverifikasi</span>
+              {' · '}
+              <span className="text-amber-500">{stats.pending_kasus} pending</span>
+              {stats.rejected_kasus > 0 && <span className="text-red-500"> · {stats.rejected_kasus} ditolak</span>}
+            </p>
           </div>
         </div>
 
-        {/* Progres */}
-        <div className="bg-white p-7 rounded-[24px] shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex flex-col justify-between w-full">
+        {/* Progres Kurikulum */}
+        <div className="bg-white p-7 rounded-[24px] shadow-sm border border-slate-200/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
           <div className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 text-2xl">
+            <div className="w-11 h-11 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 text-xl">
               <FiActivity />
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-              <span className="text-[11px] font-bold text-slate-600 uppercase">On Track</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100">
+              <div className={`w-1.5 h-1.5 rounded-full ${stats.progres_persen >= 50 ? 'bg-emerald-500' : 'bg-amber-400'} animate-pulse`}></div>
+              <span className="text-[10px] font-black text-slate-600 uppercase">
+                {stats.progres_persen >= 80 ? 'Excellent' : stats.progres_persen >= 50 ? 'On Track' : 'Perlu Kejar'}
+              </span>
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Progres Kompetensi</p>
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="font-['Manrope'] font-extrabold text-slate-900 text-[32px] leading-none">90%</h2>
-              <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                <div className="bg-purple-500 h-full w-[90%] rounded-full"></div>
-              </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Progres Kurikulum</p>
+            <div className="flex items-end justify-between gap-3 mb-3">
+              <h2 className="font-['Manrope'] font-extrabold text-slate-900 text-[36px] leading-none">{stats.progres_persen}%</h2>
+              <span className="text-[10px] text-slate-400 font-bold pb-1">{stats.verified_kasus}/{stats.target_total} kasus</span>
+            </div>
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                style={{ width: `${stats.progres_persen}%` }}
+                className="bg-purple-500 h-full rounded-full transition-all duration-700"
+              />
             </div>
           </div>
         </div>
 
         {/* Menunggu Verifikasi */}
-        <div className="bg-white p-7 rounded-[24px] shadow-sm border border-slate-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex flex-col justify-between w-full">
+        <div className="bg-white p-7 rounded-[24px] shadow-sm border border-slate-200/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
           <div className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-2xl">
+            <div className="w-11 h-11 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-xl">
               <FiClock />
             </div>
+            {stats.pending_kasus > 0 && (
+              <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100 animate-pulse">
+                Butuh Aksi
+              </span>
+            )}
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Menunggu Verifikasi</p>
-            <div className="flex items-baseline gap-2">
-              <h2 className="font-['Manrope'] font-extrabold text-slate-900 text-[32px] leading-none">26</h2>
-              <span className="text-xs font-bold text-amber-600">Entri baru</span>
-            </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Menunggu Verifikasi</p>
+            <h2 className="font-['Manrope'] font-extrabold text-slate-900 text-[36px] leading-none">
+              {stats.pending_kasus}
+            </h2>
+            <p className="text-[10px] text-slate-400 font-bold mt-2">kasus logbook klinis</p>
           </div>
         </div>
 
-        {/* Informasi Akademik */}
-        <div className="bg-[#003178] text-white p-7 rounded-[24px] shadow-xl shadow-blue-900/10 flex flex-col justify-between relative overflow-hidden group hover:shadow-2xl hover:shadow-blue-900/20 transition-all duration-500 w-full min-h-[170px]">
-          <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-all duration-700"></div>
+        {/* Info Akademik */}
+        <div className="bg-[#003178] text-white p-7 rounded-[24px] shadow-xl flex flex-col justify-between relative overflow-hidden group hover:shadow-2xl hover:shadow-blue-900/20 transition-all duration-500">
+          <div className="absolute -right-8 -top-8 w-36 h-36 bg-white/5 rounded-full blur-2xl group-hover:scale-150 transition-all duration-700" />
+          <div className="absolute -left-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-xl" />
           <div className="relative z-10">
-            <p className="text-[11px] font-bold text-blue-200/80 uppercase tracking-widest mb-2">Informasi Akademik</p>
-            <h3 className="font-['Manrope'] font-bold text-white mb-2 leading-tight text-xl">Semester 7 - Clinical Rotation</h3>
-            <p className="text-[11px] font-medium text-blue-100/70">Dept: Cardiology & Internal Medicine</p>
+            <p className="text-[10px] font-black text-blue-200/70 uppercase tracking-widest mb-2">Informasi Akademik</p>
+            <h3 className="font-['Manrope'] font-bold text-white leading-tight text-lg mb-2">
+              Program Pendidikan<br />Dokter Spesialis
+            </h3>
+            <p className="text-[10px] font-medium text-blue-100/60">
+              NIM / ID: {user?.identifier || '—'}
+            </p>
           </div>
-          <button className="relative z-10 mt-4 text-xs font-extrabold flex items-center gap-2 text-white group/btn">
-            Detail Akademik 
-            <FiArrowRight className="transition-transform group-hover/btn:translate-x-1" />
-          </button>
+          <div className="relative z-10 mt-4 flex items-center gap-2">
+            <FiAward size={12} className="text-blue-300/70" />
+            <span className="text-[9px] font-black uppercase tracking-widest text-white/60">
+              Fakultas Kedokteran UNRI
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Dashboard Split Sections - Edge-to-Edge Desktop Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-stretch">
-        
-        {/* Main Analytical Data Section (2/3 width) */}
+      {/* ── Main Content ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-start">
+
+        {/* Kiri: Grafik + Feed */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-8 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 w-full flex flex-col justify-between min-h-[420px]">
-            <div className="flex justify-between items-start mb-8">
-              <div className="font-['Manrope']">
-                <h3 className="text-lg font-bold text-slate-900 mb-1 leading-none uppercase tracking-wide">Statistik Kompetensi</h3>
-                <p className="text-sm font-medium font-['Inter'] text-slate-400">Pencapaian kompetensi per departemen (Target 100% cascades)</p>
+
+          {/* Grafik Keterisian Per Jenis Kasus */}
+          <div className="bg-white rounded-[28px] shadow-sm border border-slate-200/60 p-8 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+            <div className="mb-8">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide leading-none mb-1">
+                Keterisian Target Per Jenis Kasus
+              </h3>
+              <p className="text-xs font-medium text-slate-400">
+                Rasio pencapaian kuota kasus terverifikasi dari kurikulum PPDS
+              </p>
+            </div>
+
+            {stats.chart_data.length === 0 ? (
+              <div className="h-56 flex items-center justify-center">
+                <p className="text-xs font-black text-slate-300 uppercase tracking-widest">
+                  Belum Ada Data Kasus Terverifikasi
+                </p>
               </div>
-              <select className="bg-slate-50 border-slate-200 rounded-xl text-[11px] font-extrabold text-slate-600 py-2 px-4 focus:ring-[#003178]/20 focus:border-[#003178] transition-all cursor-pointer outline-none">
-                <option>Semester Ini</option>
-                <option>Bulan Ini</option>
-              </select>
-            </div>
-
-            {/* Simulated Analytical Graph */}
-            <div className="flex-1 flex items-end justify-between h-[300px] px-6 border-b border-slate-50">
-              {[
-                { label: "Bedah", height: "h-[65%]" },
-                { label: "Interna", height: "h-[85%]" },
-                { label: "Anak", height: "h-[40%]" },
-                { label: "Obgyn", height: "h-[95%]" },
-                { label: "THT", height: "h-[55%]" },
-                { label: "Mata", height: "h-[75%]" }
-              ].map((item, index) => (
-                <div key={index} className="flex flex-col items-center gap-5 w-16 group/bar">
-                  <div className="w-10 bg-slate-100 rounded-full h-full relative overflow-hidden cursor-pointer">
-                    <div className={`absolute bottom-0 left-0 w-full bg-[#003178] rounded-full transition-all duration-700 ${item.height} group-hover/bar:bg-blue-600`}></div>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Bottom Meta Content */}
-            <div className="mt-8 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-3 h-3 rounded-full bg-[#003178] shadow-sm shadow-[#003178]/20"></div>
-                  <span className="text-xs font-bold text-slate-600">Tervalidasi</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-3 h-3 rounded-full bg-slate-100 border border-slate-200"></div>
-                  <span className="text-xs font-bold text-slate-400">Target Belum Tercapai</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-400 bg-slate-50 px-4 py-2 rounded-full">
-                <FiClock className="text-sm" /> Update: 2 jam yang lalu
-              </div>
-            </div>
-          </div>
-
-          {/* Activity Feeds */}
-          <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-8 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 w-full">
-            <div className="flex justify-between items-center mb-6 font-['Manrope']">
-              <h3 className="text-lg font-bold text-slate-900 leading-none">Aktivitas Terakhir</h3>
-              <button className="text-sm font-extrabold text-[#003178] hover:text-blue-800 transition-colors flex items-center gap-1 group uppercase tracking-wider">
-                Lihat Semua <FiArrowRight className="transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {[
-                { title: "Appendectomy Case Entry", subtitle: "RS Pendidikan Utama • 10:24 AM", icon: <FiCheckCircle />, bg: "bg-green-50 text-green-600 border-green-100", status: "Validated", badge: "bg-green-100/50 text-green-700 border-green-200" },
-                { title: "Cardiology Consultation", subtitle: "Poli Jantung • 08:15 AM", icon: <FiClock />, bg: "bg-amber-50 text-amber-600 border-amber-100", status: "Pending", badge: "bg-amber-100/50 text-amber-700 border-amber-200" },
-                { title: "Daily Ward Rounds", subtitle: "Instalasi Rawat Inap • Kemarin", icon: <FiFileText />, bg: "bg-blue-50 text-[#003178] border-blue-100", status: "Validated", badge: "bg-green-100/50 text-green-700 border-green-200" }
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 transition-all duration-200 cursor-pointer group/item">
-                  <div className="flex items-center gap-5">
-                    <div className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center border shadow-sm transition-transform group-hover/item:scale-105 text-2xl`}>
-                      {item.icon}
+            ) : (
+              <div className="space-y-4">
+                {stats.chart_data.map((item, i) => (
+                  <div key={i} className="group/row">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight max-w-[200px] truncate">
+                        {item.label}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-bold text-slate-400">
+                          {item.capaian}/{item.target}
+                        </span>
+                        <span className="text-[11px] font-black text-[#003178] min-w-[36px] text-right">
+                          {item.percentage}%
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm leading-none">{item.title}</h4>
-                      <p className="text-xs font-medium text-slate-400 mt-1 uppercase tracking-tight">{item.subtitle}</p>
+                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-50">
+                      <div
+                        style={{ width: `${item.percentage}%` }}
+                        className={`h-full rounded-full transition-all duration-700 ${
+                          item.percentage >= 80 ? 'bg-emerald-500' :
+                          item.percentage >= 50 ? 'bg-[#003178]' :
+                          item.percentage >= 20 ? 'bg-amber-400' : 'bg-slate-300'
+                        }`}
+                      />
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <span className={`px-4 py-1.5 rounded-full ${item.badge} text-[10px] font-extrabold uppercase tracking-widest border`}>
-                      {item.status}
-                    </span>
-                    <FiArrowRight className="text-slate-300 text-lg group-hover/item:text-[#003178] transition-colors" />
-                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Legenda */}
+            <div className="mt-6 pt-5 border-t border-slate-100 flex items-center flex-wrap gap-4">
+              {[
+                { color: 'bg-emerald-500', label: '≥80% Tercapai' },
+                { color: 'bg-[#003178]',   label: '50–79% On Track' },
+                { color: 'bg-amber-400',   label: '20–49% Perlu Kejar' },
+                { color: 'bg-slate-300',   label: '<20% Belum Mulai' },
+              ].map((l, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${l.color}`} />
+                  <span className="text-[10px] font-bold text-slate-500">{l.label}</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Structural Info Panel (1/3 width) */}
-        <div className="lg:col-span-4 flex flex-col gap-6 h-full">
-          
-          {/* Status Box */}
-          <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-8 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-auto">
-            <h3 className="font-['Manrope'] font-bold text-slate-800 mb-6 flex items-center gap-3 text-lg leading-none">
-              <div className="w-8 h-8 bg-[#003178]/5 rounded-lg flex items-center justify-center">
-                <FiShield className="text-[#003178] text-base" />
-              </div>
-              Status Verifikasi
+          {/* Feed Aktivitas Bimbingan Terbaru */}
+          <div className="bg-white rounded-[28px] shadow-sm border border-slate-200/60 p-8 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide leading-none mb-6">
+              Aktivitas Bimbingan Terbaru
             </h3>
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-slate-400">Logbook Dikirim</span>
-                <span className="font-extrabold text-slate-800">124</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-slate-400">Sudah Diverifikasi</span>
-                <span className="font-extrabold text-green-600">98</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-slate-400">Menunggu Respon</span>
-                <span className="font-extrabold text-amber-600">26</span>
-              </div>
-              <div className="pt-6 border-t border-slate-50">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Rate Verifikasi</span>
-                  <span className="text-sm font-extrabold text-[#003178]">79%</span>
+            <div className="space-y-2">
+              {stats.feeds.length === 0 ? (
+                <div className="py-10 text-center text-xs font-black text-slate-300 uppercase tracking-widest">
+                  Belum Ada Catatan Bimbingan
                 </div>
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-[#003178] h-full w-[79%] rounded-full"></div>
-                </div>
-                <p className="text-[10px] font-bold text-slate-400 mt-4 text-center italic">Performa verifikasi stabil bulan ini</p>
-              </div>
+              ) : (
+                stats.feeds.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all duration-200 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0 border ${
+                        item.type === 'softskill'
+                          ? 'bg-purple-50 text-purple-600 border-purple-100'
+                          : 'bg-blue-50 text-[#003178] border-blue-100'
+                      }`}>
+                        {feedIcon(item.type)}
+                      </div>
+                      <div>
+                        <h4 className="font-black text-slate-800 text-xs uppercase tracking-tight leading-none">
+                          {item.title}
+                        </h4>
+                        <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-tight">
+                          {item.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      {statusBadge(item.status)}
+                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest hidden sm:block">
+                        {formatTanggal(item.tanggal)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Dynamic Reminders Timeline (Fix Terpotong) */}
-          <div className="bg-slate-900 text-white rounded-[32px] shadow-2xl p-8 relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group h-auto flex flex-col justify-between gap-6">
-            <div className="absolute -right-8 -top-8 opacity-10 group-hover:rotate-12 transition-transform duration-500">
-              <FiClock className="text-9xl" />
-            </div>
-            <div>
-              <h3 className="font-['Manrope'] font-bold text-lg mb-4 relative z-10 uppercase tracking-wider leading-none">Tenggat Waktu</h3>
-              <ul className="space-y-3 relative z-10">
-                <li className="bg-white/10 p-3.5 rounded-2xl border border-white/5 hover:bg-white/15 transition-all duration-200 cursor-pointer group/task">
-                  <div className="flex justify-between items-start mb-1.5">
-                    <p className="text-[10px] font-extrabold text-blue-300 uppercase tracking-widest">2 Hari Lagi</p>
-                    <FiClock className="text-xs text-white/40 group-hover/task:text-white transition-colors" />
+          {/* Kasus Klinis Terbaru */}
+          <div className="bg-white rounded-[28px] shadow-sm border border-slate-200/60 p-8 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide leading-none mb-6">
+              Kasus Klinis Terbaru
+            </h3>
+            <div className="space-y-2">
+              {stats.recent_cases.length === 0 ? (
+                <div className="py-10 text-center text-xs font-black text-slate-300 uppercase tracking-widest">
+                  Belum Ada Kasus Diinput
+                </div>
+              ) : (
+                stats.recent_cases.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg text-slate-500 shrink-0">
+                        <FiBook />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-slate-800 text-xs uppercase tracking-tight leading-none max-w-[220px] truncate">
+                          {item.tindakan}
+                        </h4>
+                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                          {item.jenis_kasus} · {item.dpjp_name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      {statusBadge(item.status)}
+                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest hidden sm:block">
+                        {item.tanggal_tindakan
+                          ? new Date(item.tanggal_tindakan).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })
+                          : '—'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-sm font-bold leading-snug">Laporan Refleksi Kasus Bedah Digestif</p>
-                </li>
-                <li className="bg-white/10 p-3.5 rounded-2xl border border-white/5 hover:bg-white/15 transition-all duration-200 cursor-pointer group/task">
-                  <div className="flex justify-between items-start mb-1.5">
-                    <p className="text-[10px] font-extrabold text-blue-300 uppercase tracking-widest">5 Hari Lagi</p>
-                    <FiClock className="text-xs text-white/40 group-hover/task:text-white transition-colors" />
-                  </div>
-                  <p className="text-sm font-bold leading-snug">Validasi Buku Saku Semester 7</p>
-                </li>
-              </ul>
+                ))
+              )}
             </div>
-            <button className="w-full py-3.5 bg-white hover:bg-blue-50 text-slate-900 text-xs font-extrabold rounded-xl active:scale-95 transition-all shadow-lg uppercase tracking-wider relative z-10">
-              Buka Kalender
-            </button>
           </div>
 
-          {/* Quick Support Contact */}
-          <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-8 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-auto flex flex-col justify-between">
-            <h3 className="font-['Manrope'] font-bold text-slate-800 mb-4 text-lg uppercase tracking-wide leading-none">Pembimbing Akademik</h3>
-            <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <div className="w-14 h-14 bg-slate-200 border border-slate-300 text-[#003178] rounded-xl flex items-center justify-center font-extrabold text-lg shadow-sm font-['Manrope']">
-                SW
-              </div>
-              <div className="flex flex-col">
-                <h4 className="text-sm font-extrabold text-slate-900 leading-tight">Dr. dr. Sarah Wijaya, Sp.B</h4>
-                <p className="text-[11px] font-bold text-slate-400 mt-1">Spesialis Bedah Umum</p>
-              </div>
-            </div>
-            <button className="w-full mt-5 flex items-center justify-center gap-2 py-3.5 border-2 border-slate-100 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-50 hover:border-slate-200 active:scale-95 transition-all group uppercase tracking-widest">
-              <FiMail className="text-base group-hover:text-[#003178]" /> Kirim Pesan
-            </button>
-          </div>
         </div>
 
+        {/* Kanan: Panel Info */}
+        <div className="lg:col-span-4 flex flex-col gap-5">
+
+          {/* Status Pengesahan */}
+          <div className="bg-white rounded-[28px] shadow-sm border border-slate-200/60 p-7 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+            <h3 className="font-['Manrope'] font-black text-slate-800 text-sm uppercase tracking-wide leading-none mb-6 flex items-center gap-2.5">
+              <div className="w-7 h-7 bg-[#003178]/5 rounded-lg flex items-center justify-center">
+                <FiShield className="text-[#003178] text-sm" />
+              </div>
+              Status Pengesahan
+            </h3>
+            <div className="space-y-4">
+              {[
+                { label: 'Total Kasus',       value: stats.total_kasus,    color: 'text-slate-800'  },
+                { label: 'Terverifikasi',      value: stats.verified_kasus, color: 'text-emerald-600'},
+                { label: 'Menunggu Verifikasi',value: stats.pending_kasus,  color: 'text-amber-600'  },
+                { label: 'Ditolak',            value: stats.rejected_kasus, color: 'text-red-500'    },
+              ].map((r, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">{r.label}</span>
+                  <span className={`font-extrabold text-sm ${r.color}`}>{r.value}</span>
+                </div>
+              ))}
+
+              <div className="pt-4 border-t border-slate-100">
+                <div className="flex justify-between items-center mb-2.5">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tingkat Verifikasi Kasus</span>
+                  <span className="text-sm font-extrabold text-[#003178]">{kasusRate}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${kasusRate}%` }}
+                    className="bg-[#003178] h-full rounded-full transition-all duration-700"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Logbook Pengabdian & Ilmiah */}
+          <div className="bg-white rounded-[28px] shadow-sm border border-slate-200/60 p-7 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+            <h3 className="font-['Manrope'] font-black text-slate-800 text-sm uppercase tracking-wide leading-none mb-6 flex items-center gap-2.5">
+              <div className="w-7 h-7 bg-purple-50 rounded-lg flex items-center justify-center">
+                <FiTrendingUp className="text-purple-600 text-sm" />
+              </div>
+              Pengabdian & Ilmiah
+            </h3>
+            <div className="space-y-4">
+              {[
+                { label: 'Total Logbook',  value: totalLogbook,          color: 'text-slate-800'   },
+                { label: 'Disetujui',      value: stats.approved_count,  color: 'text-emerald-600' },
+                { label: 'Menunggu',       value: stats.pending_count,   color: 'text-amber-600'   },
+              ].map((r, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">{r.label}</span>
+                  <span className={`font-extrabold text-sm ${r.color}`}>{r.value}</span>
+                </div>
+              ))}
+              <div className="pt-4 border-t border-slate-100">
+                <div className="flex justify-between items-center mb-2.5">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rasio Paraf Konsulen</span>
+                  <span className="text-sm font-extrabold text-purple-600">{verificationRate}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${verificationRate}%` }}
+                    className="bg-purple-500 h-full rounded-full transition-all duration-700"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pengingat */}
+          <div className="bg-slate-900 text-white rounded-[28px] p-7 flex flex-col gap-4 relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 w-28 h-28 bg-white/5 rounded-full blur-2xl" />
+            <h3 className="font-['Manrope'] font-black text-sm uppercase tracking-wider leading-none relative z-10">
+              Pengingat Logbook
+            </h3>
+            <ul className="space-y-2.5 relative z-10">
+              {[
+                { tag: 'Kasus Klinis',  msg: 'Input kasus segera setelah tindakan agar tidak lupa detail prosedur.' },
+                { tag: 'Verifikasi',    msg: 'Pastikan konsulen sudah memaraf logbook sebelum akhir bulan.' },
+              ].map((item, i) => (
+                <li key={i} className="bg-white/5 p-3.5 rounded-2xl border border-white/5">
+                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">{item.tag}</p>
+                  <p className="text-[11px] font-bold leading-snug text-white/80">{item.msg}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Pusat Layanan */}
+          <div className="bg-white rounded-[28px] shadow-sm border border-slate-200/60 p-7 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+            <h3 className="font-['Manrope'] font-black text-slate-800 text-sm uppercase tracking-wide leading-none mb-4">
+              Pusat Layanan
+            </h3>
+            <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="w-11 h-11 bg-slate-100 border border-slate-200 text-[#003178] rounded-xl flex items-center justify-center font-extrabold text-sm font-['Manrope']">
+                FK
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-tight leading-tight">
+                  Sekretariat Prodi PPDS
+                </h4>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">
+                  Sistem Informasi Logbook Terpadu
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { 
   FiHome, FiCheckSquare, FiClock, FiFileText, 
-  FiBookOpen, FiActivity, FiAlertCircle, FiSettings, FiLogOut, FiPlus 
+  FiBookOpen, FiActivity, FiAlertCircle, FiSettings, FiLogOut, FiPlus, FiCamera,FiGlobe, FiAward, FiHeart, FiUsers, FiCpu, FiClipboard
 } from "react-icons/fi";
 
 export default function SidebarDosen() {
@@ -19,30 +19,50 @@ export default function SidebarDosen() {
     {
       title: "Validasi Kasus",
       items: [
-        { name: "Antrian & Bukti", icon: <FiCheckSquare />, path: "/dosen/validasi" },
-        { name: "Riwayat Validasi", icon: <FiClock />, path: "/dosen/riwayat" }
+        { name: "Antrian & Bukti", icon: <FiCheckSquare />, path: "/dosen/verifikasi-kasus" },
+        { name: "Riwayat Validasi", icon: <FiClock />, path: "/dosen/riwayat-kasus" }
       ]
     },
     {
       title: "Penilaian",
       items: [
-        { name: "Form CBD", icon: <FiFileText />, path: "/dosen/cbd" },
-        { name: "Form DOPS", icon: <FiFileText />, path: "/dosen/dops" },
-        { name: "Form A-Cex", icon: <FiFileText />, path: "/dosen/a-cex" },
-        { name: "Form MSF", icon: <FiFileText />, path: "/dosen/msf" },
-        { name: "Bimbingan Skill", icon: <FiBookOpen />, path: "/dosen/bimbingan" }
+        { 
+          name: "Pengabdian", 
+          icon: <FiGlobe />, 
+          path: "/dosen/pengabdian-masyarakat" 
+        },
+        { 
+          name: "Kegiatan Ilmiah", 
+          icon: <FiAward />,
+          path: "/dosen/kegiatan-ilmiah" 
+        },
+        { 
+          name: "B & K", 
+          icon: <FiHeart />, 
+          path: "/dosen/bimbingan-konseling" 
+        },
+        { 
+          name: "Bimbingan Skill", 
+          icon: <FiCpu />, 
+          path: "/dosen/soft-skill" 
+        },
+        {
+          name: "Ujian DOPS",
+          icon: <FiClipboard />,
+          path: "/dosen/dops"
+        }
       ]
     },
     {
       title: "Monitoring",
       items: [
-        { name: "Progres Residen", icon: <FiActivity />, path: "/dosen/progres" },
-        { name: "Input Sanksi", icon: <FiAlertCircle />, path: "/dosen/sanksi" }
+        { name: "Progres Residen", icon: <FiActivity />, path: "/dosen/progres-resident" },
       ]
     },
     {
       title: "Pengaturan",
       items: [
+        { name: "Registrasi Wajah", icon: <FiCamera />, path: "/dosen/register-face" },
         { name: "Pengaturan Akun", icon: <FiSettings />, path: "/dosen/pengaturan" }
       ]
     }

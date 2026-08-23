@@ -13,7 +13,7 @@ export default function ForgotPasswordForm() {
         setLoading(true);
 
         try {
-            const response = await axios.post("http://localhost:8000/api/forgot-password", { email });
+            const response = await axios.post("https://api.sigmaeducation.id/api/forgot-password", { email });
             
             toast.success("Link reset password telah dikirim ke Gmail Anda! 📧");
             setEmail("");

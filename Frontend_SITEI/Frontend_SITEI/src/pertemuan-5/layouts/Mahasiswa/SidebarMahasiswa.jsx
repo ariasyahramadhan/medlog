@@ -1,36 +1,45 @@
-import { useState } from "react"; // Tambahkan useState
+import React, { useState } from "react"; 
 import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
-import { motion, AnimatePresence } from "framer-motion"; // Tambahkan AnimatePresence
+import { motion, AnimatePresence } from "framer-motion"; 
 import { 
   FiHome, FiBookOpen, FiUsers, FiClock, 
-  FiBarChart2, FiFileText, FiPlusCircle, FiHelpCircle, 
+  FiBarChart2, FiFileText, FiPlusCircle, 
   FiSettings, FiLogOut, FiPlus, FiInfo, FiShield, 
-  FiCheck, FiCheckSquare, FiChevronDown 
+  FiCheck, FiCheckSquare, FiChevronDown, FiTarget,
+  FiGlobe, FiAward, FiClipboard
 } from "react-icons/fi";
 
 export default function SidebarMahasiswa() {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // State untuk mengontrol dropdown panduan
+
+  // State Kontrol Dropdown Menu
+  const [isKegiatanOpen, setIsKegiatanOpen] = useState(false);
   const [isPanduanOpen, setIsPanduanOpen] = useState(false);
 
+  // Menu Utama Single (Tanpa Dropdown)
   const menuItems = [
     { name: "Beranda", icon: <FiHome />, path: "/mahasiswa/dashboard" },
-    { name: "Kegiatan Pendidikan", icon: <FiBookOpen />, path: "/mahasiswa/kegiatan" },
-    { name: "Bim & Bina", icon: <FiUsers />, path: "/mahasiswa/bimbingan" },
-    { name: "Riwayat", icon: <FiClock />, path: "/mahasiswa/riwayat" },
-    { name: "Progres Kompetensi", icon: <FiBarChart2 />, path: "/mahasiswa/progres" },
-    { name: "Dokumen", icon: <FiFileText />, path: "/mahasiswa/dokumen" },
+    { name: "Riwayat", icon: <FiClock />, path: "/mahasiswa/riwayat-kasus" },
+    { name: "Bim & Bina", icon: <FiUsers />, path: "/mahasiswa/bimbingan-konseling" },
+    { name: "Soft Skill", icon: <FiFileText />, path: "/mahasiswa/soft-skill" },
   ];
 
-  // Data untuk Sub-Menu Panduan
+  // Ditambahkan menu "Evaluasi DOPS" ke dalam sub-menu Kegiatan Pendidikan
+  const kegiatanSubs = [
+    { name: "Pengabdian Masyarakat", icon: <FiGlobe />, path: "/mahasiswa/pengabdian-masyarakat" },
+    { name: "Kegiatan Ilmiah", icon: <FiAward />, path: "/mahasiswa/kegiatan-ilmiah" },
+    { name: "Evaluasi DOPS", icon: <FiClipboard />, path: "/mahasiswa/dops" },
+  ];
+
+  // Sub-Menu Panduan & Aturan
   const panduanSubs = [
     { name: "Buku Log", icon: <FiInfo />, path: "/mahasiswa/panduan" },
     { name: "Sanksi & Reward", icon: <FiShield />, path: "/mahasiswa/sanksi" },
     { name: "Etika Peserta", icon: <FiCheck />, path: "/mahasiswa/etika" },
     { name: "Tata Tertib", icon: <FiCheckSquare />, path: "/mahasiswa/tata-tertib" },
+    { name: "Target Kompetensi", icon: <FiTarget />, path: "/mahasiswa/kompetensi" },
   ];
 
   const handleLogout = () => {
@@ -67,15 +76,81 @@ export default function SidebarMahasiswa() {
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation Links */}
       <nav className="flex-1 px-4 mt-2 space-y-1 overflow-y-auto scrollbar-none">
-        {menuItems.map((item, index) => {
+        
+        {/* 1. Beranda */}
+        <button
+          onClick={() => navigate(menuItems[0].path)}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
+            location.pathname === menuItems[0].path ? "bg-blue-50/80 text-[#003178]" : "text-slate-500 hover:bg-slate-50/80 hover:text-[#003178]"
+          }`}
+        >
+          <span className="text-xl">{menuItems[0].icon}</span>
+          <span className="text-sm">{menuItems[0].name}</span>
+        </button>
+
+        {/* 2. DROPDOWN: Kegiatan Pendidikan */}
+        <div className="relative">
+          <button
+            onClick={() => setIsKegiatanOpen(!isKegiatanOpen)}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
+              isKegiatanOpen || kegiatanSubs.some(sub => location.pathname === sub.path)
+                ? "text-[#003178]" 
+                : "text-slate-500 hover:bg-slate-50/80"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl"><FiBookOpen /></span>
+              <span className="text-sm">Kegiatan Pendidikan</span>
+            </div>
+            <motion.span
+              animate={{ rotate: isKegiatanOpen ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <FiChevronDown />
+            </motion.span>
+          </button>
+
+          <AnimatePresence>
+            {isKegiatanOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="overflow-hidden ml-4 mt-1 space-y-1 border-l-2 border-slate-100"
+              >
+                {kegiatanSubs.map((sub, idx) => {
+                  const isSubActive = location.pathname === sub.path;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => navigate(sub.path)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                        isSubActive 
+                          ? "text-[#003178] bg-blue-50/50" 
+                          : "text-slate-400 hover:text-[#003178] hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="text-lg">{sub.icon}</span>
+                      {sub.name}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* 3. Menu Utama Lainnya */}
+        {menuItems.slice(1).map((item, index) => {
           const isActive = location.pathname === item.path;
           return (
             <button
               key={index}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 group ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
                 isActive ? "bg-blue-50/80 text-[#003178]" : "text-slate-500 hover:bg-slate-50/80 hover:text-[#003178]"
               }`}
             >
@@ -85,7 +160,7 @@ export default function SidebarMahasiswa() {
           );
         })}
 
-        {/* DROPDOWN MENU PANDUAN */}
+        {/* 4. DROPDOWN: Panduan & Aturan */}
         <div className="relative">
           <button
             onClick={() => setIsPanduanOpen(!isPanduanOpen)}
@@ -107,7 +182,6 @@ export default function SidebarMahasiswa() {
             </motion.span>
           </button>
 
-          {/* Animasi Meluncur Sub-Menu */}
           <AnimatePresence>
             {isPanduanOpen && (
               <motion.div
@@ -143,11 +217,11 @@ export default function SidebarMahasiswa() {
       {/* Action Button */}
       <div className="p-4 mt-auto">
         <button 
-          onClick={() => navigate("/mahasiswa/entri-baru")}
+          onClick={() => navigate("/mahasiswa/input-kasus")}
           className="w-full bg-[#003178] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 hover:bg-blue-800 transition-all active:scale-95"
         >
           <FiPlusCircle className="text-lg" />
-          <span className="text-sm tracking-wide">Entri Data Baru</span>
+          <span className="text-sm tracking-wide">Entri Kasus Baru</span>
         </button>
       </div>
 

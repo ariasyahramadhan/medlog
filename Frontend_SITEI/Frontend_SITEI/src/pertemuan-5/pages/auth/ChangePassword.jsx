@@ -28,7 +28,7 @@ export default function ChangePassword() {
       const token = localStorage.getItem("token");
       
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/change-password",
+        "https://api.sigmaeducation.id/api/change-password",
         {
           password: dataForm.password,
           password_confirmation: dataForm.password_confirmation,

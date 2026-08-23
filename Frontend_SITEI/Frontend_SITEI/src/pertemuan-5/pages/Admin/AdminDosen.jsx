@@ -35,7 +35,7 @@ export default function AdminDosen() {
     status: "Aktif"
   });
 
-  const API_URL = "http://localhost:8000/api/lecturers";
+  const API_URL = "https://api.sigmaeducation.id/api/lecturers";
 
   // SweetAlert2 Mixin Custom Style
   const customSwal = Swal.mixin({

@@ -3,13 +3,13 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { FiUser, FiLock, FiCamera, FiInfo } from "react-icons/fi";
 
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "https://api.sigmaeducation.id/api";
 const PLACEHOLDER = "https://ui-avatars.com/api/?background=003178&color=fff&size=128&name=User";
 
 const resolveAvatarUrl = (avatarPath) => {
   if (!avatarPath) return PLACEHOLDER;
   if (avatarPath.startsWith("http")) return avatarPath;
-  return `http://localhost:8000${avatarPath}`;
+  return `https://api.sigmaeducation.id${avatarPath}`;
 };
 
 export default function MahasiswaPengaturan() {

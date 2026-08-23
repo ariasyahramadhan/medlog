@@ -37,7 +37,7 @@ export default function AdminMahasiswa() {
   });
 
   // URL API Laravel
-  const API_URL = "http://localhost:8000/api/students";
+  const API_URL = "https://api.sigmaeducation.id/api/students";
 
   // Konfigurasi Kustom SweetAlert2 agar Senada dengan Tema Sistem
   const customSwal = Swal.mixin({
