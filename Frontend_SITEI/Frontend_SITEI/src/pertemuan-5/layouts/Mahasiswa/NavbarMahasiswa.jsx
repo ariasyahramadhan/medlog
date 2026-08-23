@@ -1,28 +1,23 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { FiSearch } from "react-icons/fi";
+import api from "../../../services/api";
 
-const API_BASE = "https://api.sigmaeducation.id/api";
 const PLACEHOLDER_AVATAR = (name) => 
   `https://ui-avatars.com/api/?background=003178&color=fff&size=128&name=${encodeURIComponent(name || "User")}`;
 
 const resolveAvatarUrl = (avatarPath, name) => {
   if (!avatarPath) return PLACEHOLDER_AVATAR(name);
   if (avatarPath.startsWith("http")) return avatarPath;
-  return `https://api.sigmaeducation.id${avatarPath}`;
+  const baseUrl = (import.meta.env.VITE_API_URL || "https://api.sigmaeducation.id").replace(/\/+$/, "");
+  return `${baseUrl}${avatarPath}`;
 };
 
 export default function NavbarMahasiswa() {
   const [profile, setProfile] = useState(null);
 
   const fetchProfile = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     try {
-      const res = await axios.get(`${API_BASE}/mahasiswa/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/mahasiswa/profile");
       setProfile(res.data);
     } catch (err) {
       console.error("Gagal memuat profil mahasiswa di navbar:", err);

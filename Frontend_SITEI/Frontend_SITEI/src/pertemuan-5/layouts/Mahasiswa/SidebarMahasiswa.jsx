@@ -7,7 +7,7 @@ import {
   FiBarChart2, FiFileText, FiPlusCircle, 
   FiSettings, FiLogOut, FiPlus, FiInfo, FiShield, 
   FiCheck, FiCheckSquare, FiChevronDown, FiTarget,
-  FiGlobe, FiAward, FiClipboard
+  FiGlobe, FiAward, FiClipboard, FiUserCheck
 } from "react-icons/fi";
 
 export default function SidebarMahasiswa() {
@@ -21,6 +21,7 @@ export default function SidebarMahasiswa() {
   // Menu Utama Single (Tanpa Dropdown)
   const menuItems = [
     { name: "Beranda", icon: <FiHome />, path: "/mahasiswa/dashboard" },
+    { name: "Presensi", icon: <FiUserCheck />, path: "/mahasiswa/presensi" },
     { name: "Riwayat", icon: <FiClock />, path: "/mahasiswa/riwayat-kasus" },
     { name: "Bim & Bina", icon: <FiUsers />, path: "/mahasiswa/bimbingan-konseling" },
     { name: "Soft Skill", icon: <FiFileText />, path: "/mahasiswa/soft-skill" },
@@ -79,16 +80,22 @@ export default function SidebarMahasiswa() {
       {/* Navigation Links */}
       <nav className="flex-1 px-4 mt-2 space-y-1 overflow-y-auto scrollbar-none">
         
-        {/* 1. Beranda */}
-        <button
-          onClick={() => navigate(menuItems[0].path)}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
-            location.pathname === menuItems[0].path ? "bg-blue-50/80 text-[#003178]" : "text-slate-500 hover:bg-slate-50/80 hover:text-[#003178]"
-          }`}
-        >
-          <span className="text-xl">{menuItems[0].icon}</span>
-          <span className="text-sm">{menuItems[0].name}</span>
-        </button>
+        {/* 1. Beranda & Presensi (Menu Utama Atas) */}
+        {menuItems.slice(0, 2).map((item, index) => {
+          const isActive = location.pathname === item.path || (item.path === "/mahasiswa/presensi" && location.pathname.startsWith("/mahasiswa/presensi"));
+          return (
+            <button
+              key={index}
+              onClick={() => navigate(item.path)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all duration-300 ${
+                isActive ? "bg-blue-50/80 text-[#003178]" : "text-slate-500 hover:bg-slate-50/80 hover:text-[#003178]"
+              }`}
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span className="text-sm">{item.name}</span>
+            </button>
+          );
+        })}
 
         {/* 2. DROPDOWN: Kegiatan Pendidikan */}
         <div className="relative">
@@ -144,7 +151,7 @@ export default function SidebarMahasiswa() {
         </div>
 
         {/* 3. Menu Utama Lainnya */}
-        {menuItems.slice(1).map((item, index) => {
+        {menuItems.slice(2).map((item, index) => {
           const isActive = location.pathname === item.path;
           return (
             <button

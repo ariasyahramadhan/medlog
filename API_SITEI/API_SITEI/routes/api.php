@@ -114,6 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
     Route::get('/attendance/today', [AttendanceController::class, 'getToday']);
     Route::get('/attendance/history', [AttendanceController::class, 'history']);
+    Route::get('/user/schedule/today', [ScheduleController::class, 'todayForUser']);
     
     // Phase 4 Routes
     Route::post('/user/profile', [ProfileController::class, 'update']);

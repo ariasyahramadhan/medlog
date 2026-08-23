@@ -23,30 +23,23 @@ class AttendanceController extends Controller
         $user = $request->user();
 
         // 1. Call Python microservice
+        $aiServiceUrl = env('AI_SERVICE_URL', 'http://127.0.0.1:8001');
         try {
-            $pythonResponse = Http::post('http://127.0.0.1:8002/detect-face', [
+            $pythonResponse = Http::timeout(3)->post($aiServiceUrl . '/detect-face', [
                 'image_base64' => $request->photo_base64
             ]);
 
-            if (!$pythonResponse->successful()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal menghubungi face detection service.'
-                ], 500);
+            if ($pythonResponse->successful()) {
+                $pythonData = $pythonResponse->json();
+                if (isset($pythonData['face_detected']) && $pythonData['face_detected'] === false) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Wajah tidak terdeteksi dalam foto. Pastikan wajah terlihat jelas di kamera.'
+                    ], 400);
+                }
             }
-
-            $pythonData = $pythonResponse->json();
-            if (empty($pythonData['face_detected'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Wajah tidak terdeteksi dalam foto.'
-                ], 400);
-            }
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Face detection microservice offline or unreachable: ' . $e->getMessage());
         }
 
         // 2. Save photo (decode base64 and store)
@@ -58,6 +51,10 @@ class AttendanceController extends Controller
         $areas = \App\Models\LocationArea::where('status', 'approved')->whereHas('users', function($q) use ($user) {
             $q->where('users.id', $user->id);
         })->get();
+
+        if ($areas->isEmpty()) {
+            $areas = \App\Models\LocationArea::where('status', 'approved')->get();
+        }
 
         foreach ($areas as $area) {
             if ($area->type === 'radius' && $area->center_lat && $area->center_lng) {
@@ -107,30 +104,23 @@ class AttendanceController extends Controller
         $user = $request->user();
 
         // 1. Call Python microservice
+        $aiServiceUrl = env('AI_SERVICE_URL', 'http://127.0.0.1:8001');
         try {
-            $pythonResponse = Http::post('http://127.0.0.1:8002/detect-face', [
+            $pythonResponse = Http::timeout(3)->post($aiServiceUrl . '/detect-face', [
                 'image_base64' => $request->photo_base64
             ]);
 
-            if (!$pythonResponse->successful()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal menghubungi face detection service.'
-                ], 500);
+            if ($pythonResponse->successful()) {
+                $pythonData = $pythonResponse->json();
+                if (isset($pythonData['face_detected']) && $pythonData['face_detected'] === false) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Wajah tidak terdeteksi dalam foto. Pastikan wajah terlihat jelas di kamera.'
+                    ], 400);
+                }
             }
-
-            $pythonData = $pythonResponse->json();
-            if (empty($pythonData['face_detected'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Wajah tidak terdeteksi dalam foto.'
-                ], 400);
-            }
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Face detection microservice offline or unreachable: ' . $e->getMessage());
         }
 
         // 2. Save photo (decode base64 and store)
@@ -142,6 +132,10 @@ class AttendanceController extends Controller
         $areas = \App\Models\LocationArea::where('status', 'approved')->whereHas('users', function($q) use ($user) {
             $q->where('users.id', $user->id);
         })->get();
+
+        if ($areas->isEmpty()) {
+            $areas = \App\Models\LocationArea::where('status', 'approved')->get();
+        }
 
         foreach ($areas as $area) {
             if ($area->type === 'radius' && $area->center_lat && $area->center_lng) {
@@ -229,12 +223,28 @@ class AttendanceController extends Controller
     {
         $month = $request->query('month', Carbon::now()->month);
         $year = $request->query('year', Carbon::now()->year);
+        $userId = $request->query('user_id');
+        $isFlagged = $request->query('is_flagged');
 
-        $logs = AttendanceLog::with(['locationArea', 'user'])
-            ->whereMonth('attended_at', $month)
-            ->whereYear('attended_at', $year)
-            ->orderBy('attended_at', 'desc')
-            ->get();
+        $query = AttendanceLog::with(['locationArea', 'user']);
+
+        if ($month) {
+            $query->whereMonth('attended_at', $month);
+        }
+        if ($year) {
+            $query->whereYear('attended_at', $year);
+        }
+        if (!empty($userId)) {
+            $query->where('user_id', $userId);
+        }
+        if ($isFlagged !== null && $isFlagged !== '') {
+            $flagVal = filter_var($isFlagged, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($flagVal !== null) {
+                $query->where('is_flagged', $flagVal);
+            }
+        }
+
+        $logs = $query->orderBy('attended_at', 'desc')->get();
 
         return response()->json([
             'success' => true,
@@ -272,9 +282,74 @@ class AttendanceController extends Controller
         return response()->json(['success' => true, 'message' => 'Flag reset']);
     }
 
-    public function exportCsv()
+    public function exportCsv(Request $request)
     {
-        return response()->json(['success' => true, 'message' => 'Export CSV dummy']);
+        $month = $request->query('month', Carbon::now()->month);
+        $year = $request->query('year', Carbon::now()->year);
+        $userId = $request->query('user_id');
+
+        $query = AttendanceLog::with(['locationArea', 'user']);
+
+        if ($month) {
+            $query->whereMonth('attended_at', $month);
+        }
+        if ($year) {
+            $query->whereYear('attended_at', $year);
+        }
+        if (!empty($userId)) {
+            $query->where('user_id', $userId);
+        }
+
+        $logs = $query->orderBy('attended_at', 'desc')->get();
+
+        $filename = "rekap_presensi_{$year}_{$month}.csv";
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function () use ($logs) {
+            $file = fopen('php://output', 'w');
+            // Add UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Header row
+            fputcsv($file, [
+                'ID',
+                'Nama Mahasiswa',
+                'NIM / Identifier',
+                'Tipe Presensi',
+                'Waktu Presensi',
+                'Area / Lokasi',
+                'Latitude',
+                'Longitude',
+                'Status Validasi',
+                'Catatan / Alasan Flag'
+            ]);
+
+            foreach ($logs as $log) {
+                fputcsv($file, [
+                    $log->id,
+                    $log->user ? $log->user->name : 'N/A',
+                    $log->user ? $log->user->identifier : 'N/A',
+                    $log->type === 'check_in' ? 'Masuk (Check In)' : 'Pulang (Check Out)',
+                    $log->attended_at ? $log->attended_at->format('Y-m-d H:i:s') : 'N/A',
+                    $log->locationArea ? $log->locationArea->name : 'Di Luar Area',
+                    $log->latitude,
+                    $log->longitude,
+                    $log->is_flagged ? 'Perlu Ditinjau (Flagged)' : 'Valid',
+                    $log->flag_reason ?? '-'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     private function calculateDistance($lat1, $lon1, $lat2, $lon2) {

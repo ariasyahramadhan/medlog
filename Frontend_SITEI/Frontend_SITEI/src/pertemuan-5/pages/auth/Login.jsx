@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiUser, FiLock, FiLogOut, FiEye, FiEyeOff, FiCamera, FiX } from "react-icons/fi";
+import { FiUser, FiLock, FiLogOut, FiEye, FiEyeOff, FiCamera, FiX, FiUserCheck, FiArrowRight, FiCheckCircle } from "react-icons/fi";
 import { ImSpinner2 } from "react-icons/im";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import Swal from "sweetalert2";
 import Webcam from "react-webcam";
+import api from "../../../services/api";
 
 export default function Login() {
   const navigate   = useNavigate();
@@ -28,7 +29,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post("https://api.sigmaeducation.id/api/login", {
+      const response = await api.post("/login", {
         identifier: dataForm.identifier,
         password:   dataForm.password,
         role:       activeRole,
@@ -54,11 +55,11 @@ export default function Login() {
 
     try {
       // 1. Ambil seluruh face_vector Dosen dari Laravel
-      const vectorsRes = await axios.get("https://api.sigmaeducation.id/api/get-all-dosen-vectors");
+      const vectorsRes = await api.get("/get-all-dosen-vectors");
       const dosenList  = vectorsRes.data.data; // [{ id, name, identifier, face_vector }]
 
       // 2. Kirim gambar + semua vector ke AI Server untuk dicocokkan
-      const aiRes = await axios.post("https://api.sigmaeducation.id/api/verify-face", {
+      const aiRes = await api.post("/verify-face", {
         image_base64: imageSrc,
         dosen_list:   dosenList,   // AI mencari sendiri siapa yang cocok
       });
@@ -71,7 +72,7 @@ export default function Login() {
       // 3. AI mengembalikan identifier pemilik wajah → minta token ke Laravel
       const matchedIdentifier = aiRes.data.identifier;
 
-      const loginRes = await axios.post("https://api.sigmaeducation.id/api/login-biometric", {
+      const loginRes = await api.post("/login-biometric", {
         identifier: matchedIdentifier,
       });
 
@@ -153,14 +154,70 @@ export default function Login() {
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
           {/* Header */}
-          <motion.div layout className="mb-10 text-left">
+          <motion.div layout className="mb-8 text-left">
             <h2 className="text-5xl font-black text-[#1e4f8a] tracking-tighter uppercase leading-none">
               Login <span className="text-blue-500 font-light italic">{activeRole}</span>
             </h2>
-            <p className="text-gray-400 text-lg mt-4 font-medium italic leading-relaxed">
+            <p className="text-gray-400 text-lg mt-3 font-medium italic leading-relaxed">
               Silakan masukkan kredensial sistem Anda.
             </p>
           </motion.div>
+
+          {/* Quick Access Presensi Card */}
+          {activeRole === "Mahasiswa" && (
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-5 rounded-2xl bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 border-2 border-blue-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-[#003178] text-white flex items-center justify-center text-2xl shrink-0 shadow-md shadow-blue-900/20 group-hover:scale-105 transition-transform">
+                  <FiUserCheck />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-extrabold text-[#003178] tracking-tight">
+                      Presensi Residen Anestesi
+                    </h4>
+                    <span className="text-[9px] font-black uppercase tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded-full shadow-xs">
+                      Akses Cepat
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 font-medium mt-0.5 leading-snug">
+                    Buka halaman absensi harian (kamera & GPS) tanpa menu panjang
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const token = localStorage.getItem("token");
+                  const userStr = localStorage.getItem("user");
+                  if (token && userStr) {
+                    try {
+                      const u = JSON.parse(userStr);
+                      if (u.role === "Mahasiswa") {
+                        navigate("/mahasiswa/presensi");
+                        return;
+                      }
+                    } catch (e) {}
+                  }
+                  Swal.fire({
+                    icon: "info",
+                    title: "Masuk Terlebih Dahulu",
+                    text: "Silakan masukkan NIM dan kata sandi di bawah. Sistem akan menyimpan sesi login Anda agar selanjutnya dapat langsung presensi dengan 1 klik.",
+                    confirmButtonColor: "#003178",
+                    confirmButtonText: "Isi Formulir Login"
+                  });
+                }}
+                className="w-full sm:w-auto px-5 py-3 bg-[#003178] hover:bg-blue-900 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md hover:scale-105 active:scale-95 transition-all shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Buka Presensi</span>
+                <FiArrowRight size={14} />
+              </button>
+            </motion.div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-7 w-full">
             <motion.div layout className="space-y-7">

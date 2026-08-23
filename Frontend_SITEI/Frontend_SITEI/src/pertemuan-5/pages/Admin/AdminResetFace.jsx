@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import Swal from "sweetalert2";
+import api from "../../../services/api";
 import { FiRefreshCw, FiUser, FiCheckCircle, FiXCircle, FiSearch, FiTrash2, FiShield, FiCpu } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -13,9 +13,7 @@ export default function AdminResetFace() {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get("https://api.sigmaeducation.id/api/admin/users", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      });
+      const res = await api.get("/admin/users");
       setUsers(res.data);
     } catch (err) {
       console.error("Gagal mengambil data pengguna:", err);
@@ -45,9 +43,7 @@ export default function AdminResetFace() {
       if (result.isConfirmed) {
         setIsResetting(userId);
         try {
-          const res = await axios.post(`https://api.sigmaeducation.id/api/admin/reset-face/${userId}`, {}, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-          });
+          const res = await api.post(`/admin/reset-face/${userId}`);
           Swal.fire({
             icon: "success",
             title: "Berhasil Direset",

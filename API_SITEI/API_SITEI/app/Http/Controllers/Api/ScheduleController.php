@@ -18,6 +18,62 @@ class ScheduleController extends Controller
         ]);
     }
 
+    public function todayForUser(Request $request)
+    {
+        $user = $request->user();
+        $now = \Carbon\Carbon::now();
+        
+        $dayOfWeekIso = (string)$now->isoFormat('E'); // 1 (Mon) to 7 (Sun)
+        $dayOfWeekIndex = (string)$now->dayOfWeek;    // 0 (Sun) to 6 (Sat)
+        $dayNameEn = $now->format('l');              // Monday
+        $dayNameEnShort = $now->format('D');         // Mon
+        $dayNameId = match($dayOfWeekIso) {
+            '1' => 'Senin',
+            '2' => 'Selasa',
+            '3' => 'Rabu',
+            '4' => 'Kamis',
+            '5' => 'Jumat',
+            '6' => 'Sabtu',
+            '7' => 'Minggu',
+            default => 'Senin'
+        };
+
+        // Cari schedule yang di-assign ke user ini
+        $schedules = Schedule::whereHas('users', function ($q) use ($user) {
+            $q->where('users.id', $user->id);
+        })->with('locationAreas')->get();
+
+        if ($schedules->isEmpty()) {
+            // Fallback: jika user belum di-assign spesifik, ambil semua schedule yang aktif
+            $schedules = Schedule::with('locationAreas')->get();
+        }
+
+        // Cari yang match hari ini
+        $matchedSchedule = $schedules->first(function ($schedule) use ($dayOfWeekIso, $dayOfWeekIndex, $dayNameEn, $dayNameEnShort, $dayNameId) {
+            $days = is_array($schedule->days_of_week) ? $schedule->days_of_week : json_decode($schedule->days_of_week, true);
+            if (empty($days)) return true;
+
+            foreach ($days as $d) {
+                $dStr = (string)$d;
+                if (
+                    strcasecmp($dStr, $dayNameEn) === 0 ||
+                    strcasecmp($dStr, $dayNameEnShort) === 0 ||
+                    strcasecmp($dStr, $dayNameId) === 0 ||
+                    $dStr === $dayOfWeekIso ||
+                    $dStr === $dayOfWeekIndex
+                ) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $matchedSchedule
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -32,6 +88,7 @@ class ScheduleController extends Controller
         ]);
 
         $schedule = Schedule::create([
+            'user_id' => $request->user()->id,
             'name' => $validated['name'],
             'days_of_week' => $validated['days_of_week'],
             'check_in_start' => $validated['check_in_start'],

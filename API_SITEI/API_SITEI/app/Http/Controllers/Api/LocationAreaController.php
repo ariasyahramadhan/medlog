@@ -11,7 +11,10 @@ class LocationAreaController extends Controller
 {
     public function index()
     {
-        return response()->json(LocationArea::all());
+        return response()->json([
+            'success' => true,
+            'data' => LocationArea::all()
+        ]);
     }
 
     public function store(Request $request)
@@ -25,34 +28,43 @@ class LocationAreaController extends Controller
             'polygon_points' => 'nullable|array',
         ]);
 
-        $status = 'approved';
-        if (strtolower($request->user()->role) !== 'admin') {
-            $status = 'pending';
+        $isAdmin = strtolower($request->user()->role) === 'admin';
+        $status = $isAdmin ? 'approved' : 'pending';
+
+        if (!$isAdmin) {
             $validated['type'] = 'radius';
             $validated['radius_meters'] = 40.0;
-        }
 
-        // Check if an area created by this user already exists
-        $area = LocationArea::where('created_by', $request->user()->id)->first();
-        if ($area) {
-            $area->update($validated + [
-                'status' => $status
-            ]);
-            // Ensure relationship exists in location_area_user pivot table
-            if ($status === 'pending' && !$area->users()->where('users.id', $request->user()->id)->exists()) {
-                $area->users()->attach($request->user()->id);
-            }
-        } else {
-            $area = LocationArea::create($validated + [
-                'created_by' => $request->user()->id,
-                'status' => $status
-            ]);
-            if ($status === 'pending') {
-                $area->users()->attach($request->user()->id);
+            // Jika mahasiswa, update jika sudah pernah ajukan lokasi
+            $area = LocationArea::where('created_by', $request->user()->id)->first();
+            if ($area) {
+                $area->update($validated + ['status' => $status]);
+                if (!$area->users()->where('users.id', $request->user()->id)->exists()) {
+                    $area->users()->attach($request->user()->id);
+                }
+                return response()->json([
+                    'success' => true,
+                    'data' => $area,
+                    'message' => 'Pengajuan lokasi berhasil diperbarui.'
+                ], 200);
             }
         }
 
-        return response()->json($area, 201);
+        // Untuk Admin (atau mahasiswa pertama kali), buat lokasi baru
+        $area = LocationArea::create($validated + [
+            'created_by' => $request->user()->id,
+            'status' => $status
+        ]);
+
+        if (!$isAdmin) {
+            $area->users()->attach($request->user()->id);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $area,
+            'message' => 'Area lokasi berhasil dibuat.'
+        ], 201);
     }
     public function update(Request $request, $id)
     {
@@ -68,20 +80,28 @@ class LocationAreaController extends Controller
         ]);
 
         $area->update($validated);
-        return response()->json($area);
+        return response()->json([
+            'success' => true,
+            'data' => $area,
+            'message' => 'Area lokasi berhasil diperbarui.'
+        ]);
     }
 
     public function destroy($id)
     {
         $area = LocationArea::findOrFail($id);
         $area->delete();
-        return response()->json(['message' => 'Area dihapus']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Area lokasi berhasil dihapus.'
+        ]);
     }
 
     public function getAssignedUsers($id)
     {
         $area = LocationArea::findOrFail($id);
         return response()->json([
+            'success' => true,
             'assigned_user_ids' => $area->users()->pluck('users.id')
         ]);
     }
@@ -93,21 +113,32 @@ class LocationAreaController extends Controller
             'user_ids' => 'array'
         ]);
         $area->users()->sync($request->user_ids ?? []);
-        return response()->json(['message' => 'Users synced']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar pengguna berhasil diperbarui.'
+        ]);
     }
 
     public function approve($id)
     {
         $area = LocationArea::findOrFail($id);
         $area->update(['status' => 'approved']);
-        return response()->json($area);
+        return response()->json([
+            'success' => true,
+            'data' => $area,
+            'message' => 'Pengajuan lokasi berhasil disetujui.'
+        ]);
     }
 
     public function reject($id)
     {
         $area = LocationArea::findOrFail($id);
         $area->update(['status' => 'rejected']);
-        return response()->json($area);
+        return response()->json([
+            'success' => true,
+            'data' => $area,
+            'message' => 'Pengajuan lokasi berhasil ditolak.'
+        ]);
     }
 
     public function getUserLocations($userId)

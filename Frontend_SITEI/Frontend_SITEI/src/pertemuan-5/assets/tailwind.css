@@ -2,20 +2,20 @@
 
 @font-face {
     font-family: 'Inter';
-    src: url('/public/fonts/Inter_18pt-Regular.ttf');
+    src: url('/fonts/Inter_18pt-Regular.ttf');
 }
 
 @font-face {
     font-family: 'Poppins';
-    src: url('/public/fonts/Poppins-Regular.ttf');
+    src: url('/fonts/Poppins-Regular.ttf');
 }
 @font-face {
     font-family: 'Poppins-Bold';
-    src: url('/public/fonts/Poppins-Boldttf');
+    src: url('/fonts/Poppins-Bold.ttf');
 }
 @font-face {
     font-family: 'Poppins-SemiBold';
-    src: url('/public/fonts/Poppins-SemiBoldttf');
+    src: url('/fonts/Poppins-SemiBold.ttf');
 }
 
 

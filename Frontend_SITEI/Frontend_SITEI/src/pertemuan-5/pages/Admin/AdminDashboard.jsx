@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import api from '../../../services/api';
 import {
   FiUsers, FiAward, FiShield, FiGrid,
   FiLoader, FiAlertTriangle, FiRefreshCw,
@@ -60,9 +61,7 @@ export default function DashboardAdmin() {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get(`${API_URL}/admin/dashboard-stats`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      const res = await api.get('/admin/dashboard-stats');
       setStats(res.data);
     } catch (err) {
       setError({

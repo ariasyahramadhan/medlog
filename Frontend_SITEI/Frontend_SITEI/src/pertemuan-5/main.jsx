@@ -29,6 +29,9 @@ import AdminMahasiswa from "./pages/Admin/AdminMahasiswa.jsx";
 import AdminDosen from "./pages/Admin/AdminDosen.jsx";
 import AdminMentor from "./pages/Admin/AdminMentor.jsx";
 import AdminResetFace from "./pages/Admin/AdminResetFace.jsx";
+import AdminPresensiRekap from "./pages/Admin/presensi/AdminPresensiRekap.jsx";
+import AdminPresensiJadwal from "./pages/Admin/presensi/AdminPresensiJadwal.jsx";
+import AdminPresensiLokasi from "./pages/Admin/presensi/AdminPresensiLokasi.jsx";
 
 import DosenPengaturan from "./pages/Dosen/DosenPengaturan.jsx";
 import DosenRegisterFace from "./pages/Dosen/DosenRegisterFace.jsx"
@@ -55,6 +58,8 @@ import MahasiswaKegiatanIlmiah from "./pages/Mahasiswa/MahasiswaKegiatanIlmiah.j
 import MahasiswaBimbinganKonseling from "./pages/Mahasiswa/MahasiswaBimbinganKonseling.jsx";
 import MahasiswaSoftSkill from "./pages/Mahasiswa/MahasiswaSoftSkill.jsx";
 import MahasiswaDopsHistory from "./pages/Mahasiswa/MahasiswaDopsHistory.jsx";
+import MahasiswaPresensi from "./pages/Mahasiswa/presensi/MahasiswaPresensi.jsx";
+import MahasiswaRiwayatPresensi from "./pages/Mahasiswa/presensi/MahasiswaRiwayatPresensi.jsx";
 
 import LupaPassword from "./pages/auth/ForgotPassword.jsx"
 import ResetPassword from "./pages/auth/ResetPassword.jsx";
@@ -90,6 +95,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="/mahasiswa/bimbingan-konseling" element={<MahasiswaBimbinganKonseling />} />
           <Route path="/mahasiswa/soft-skill" element={<MahasiswaSoftSkill />} />
           <Route path="/mahasiswa/dops" element={<MahasiswaDopsHistory />} />
+          <Route path="/mahasiswa/presensi" element={<MahasiswaPresensi />} />
+          <Route path="/mahasiswa/presensi/riwayat" element={<MahasiswaRiwayatPresensi />} />
           {/* Tambahkan rute mahasiswa lainnya di sini */}
         </Route>
       </Route>
@@ -120,6 +127,9 @@ createRoot(document.getElementById("root")).render(
           <Route path="/admin/dosen" element={<AdminDosen/>} />
           <Route path="/admin/mentor" element={<AdminMentor/>} />
           <Route path="/admin/reset-face" element={<AdminResetFace />} />
+          <Route path="/admin/presensi/rekap" element={<AdminPresensiRekap />} />
+          <Route path="/admin/presensi/jadwal" element={<AdminPresensiJadwal />} />
+          <Route path="/admin/presensi/lokasi" element={<AdminPresensiLokasi />} />
           {/* Tambahkan rute admin lainnya di sini */}
         </Route>
       </Route>

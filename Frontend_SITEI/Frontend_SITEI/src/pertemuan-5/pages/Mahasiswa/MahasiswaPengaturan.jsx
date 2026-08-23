@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import Swal from "sweetalert2";
 import { FiUser, FiLock, FiCamera, FiInfo } from "react-icons/fi";
+import api from "../../../services/api";
 
-const API_BASE = "https://api.sigmaeducation.id/api";
 const PLACEHOLDER = "https://ui-avatars.com/api/?background=003178&color=fff&size=128&name=User";
 
 const resolveAvatarUrl = (avatarPath) => {
   if (!avatarPath) return PLACEHOLDER;
   if (avatarPath.startsWith("http")) return avatarPath;
-  return `https://api.sigmaeducation.id${avatarPath}`;
+  const baseUrl = (import.meta.env.VITE_API_URL || "https://api.sigmaeducation.id").replace(/\/+$/, "");
+  return `${baseUrl}${avatarPath}`;
 };
 
 export default function MahasiswaPengaturan() {
@@ -36,19 +36,10 @@ export default function MahasiswaPengaturan() {
     buttonsStyling: false,
   });
 
-  const getAuthHeader = () => {
-    const token = localStorage.getItem("token");
-    return { Authorization: `Bearer ${token}` };
-  };
-
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      // Endpoint disesuaikan untuk mahasiswa
-      const res = await axios.get(`${API_BASE}/mahasiswa/profile`, {
-        headers: getAuthHeader(),
-      });
-
+      const res = await api.get("/mahasiswa/profile");
       const data = res.data;
       setProfile(data);
       setName(data.name || "");
@@ -83,9 +74,8 @@ export default function MahasiswaPengaturan() {
     if (avatarFile) data.append("avatar", avatarFile);
 
     try {
-      const res = await axios.post(`${API_BASE}/mahasiswa/profile`, data, {
+      const res = await api.post("/mahasiswa/profile", data, {
         headers: {
-          ...getAuthHeader(),
           "Content-Type": "multipart/form-data",
         },
       });
@@ -123,11 +113,10 @@ export default function MahasiswaPengaturan() {
     }
 
     try {
-      await axios.put(
-        `${API_BASE}/mahasiswa/password`,
-        { current_password: currentPassword, new_password: newPassword },
-        { headers: getAuthHeader() }
-      );
+      await api.put("/mahasiswa/password", {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
 
       setCurrentPassword("");
       setNewPassword("");

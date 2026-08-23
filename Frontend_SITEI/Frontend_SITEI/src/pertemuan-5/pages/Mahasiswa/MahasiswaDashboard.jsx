@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import api from '../../../services/api';
 import {
   FiActivity, FiCheckCircle, FiClock, FiFileText,
   FiShield, FiLoader, FiAlertTriangle, FiXCircle,
   FiTrendingUp, FiUsers, FiBook, FiAward
 } from "react-icons/fi";
-
-const API_URL = 'https://api.sigmaeducation.id/api';
+import AttendanceTodayCard from "./presensi/components/AttendanceTodayCard";
+import useAttendance from "../../../hooks/useAttendance";
 
 const formatTanggal = (val) => {
   if (!val) return '—';
@@ -41,13 +42,14 @@ export default function DashboardMahasiswa() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ─── Hook presensi ──────────────────────────────────────────────────────────
+  const attendance = useAttendance();
+
   const fetchStats = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await axios.get(`${API_URL}/mahasiswa/dashboard-stats`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      const res = await api.get('/mahasiswa/dashboard-stats');
       setStats(res.data);
     } catch (err) {
       setError({
@@ -127,6 +129,16 @@ export default function DashboardMahasiswa() {
 
       {/* ── Stat Cards (4 kolom) ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 w-full">
+
+        {/* Presensi Hari Ini */}
+        <AttendanceTodayCard
+          hasCheckedIn={attendance.hasCheckedIn}
+          hasCheckedOut={attendance.hasCheckedOut}
+          checkInLog={attendance.checkInLog}
+          checkOutLog={attendance.checkOutLog}
+          loading={attendance.loading}
+          schedule={attendance.schedule}
+        />
 
         {/* Total Kasus */}
         <div className="bg-white p-7 rounded-[24px] shadow-sm border border-slate-200/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">

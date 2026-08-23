@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "../../../services/api";
 import Swal from "sweetalert2";
 import { 
   FiSearch, FiPlus, FiEdit, FiTrash2, 
@@ -58,8 +59,7 @@ export default function AdminMahasiswa() {
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(API_URL, {
-        headers: getAuthHeader(),
+      const response = await api.get("/students", {
         params: {
           search: search,
           department: deptFilter,
@@ -90,9 +90,7 @@ export default function AdminMahasiswa() {
         const updateData = { ...formData };
         if (!updateData.password) delete updateData.password;
 
-        await axios.put(`${API_URL}/${selectedStudent.id}`, updateData, {
-          headers: getAuthHeader()
-        });
+        await api.put(`/students/${selectedStudent.id}`, updateData);
         closeModal();
         fetchStudents();
         customSwal.fire({
@@ -101,9 +99,7 @@ export default function AdminMahasiswa() {
           icon: "success"
         });
       } else {
-        await axios.post(API_URL, formData, {
-          headers: getAuthHeader()
-        });
+        await api.post("/students", formData);
         closeModal();
         fetchStudents();
         customSwal.fire({
@@ -135,9 +131,7 @@ export default function AdminMahasiswa() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await axios.delete(`${API_URL}/${id}`, {
-            headers: getAuthHeader()
-          });
+          await api.delete(`/students/${id}`);
           fetchStudents();
           customSwal.fire({
             title: "Terhapus!",
