@@ -7,6 +7,8 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import Webcam from "react-webcam";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Login() {
   const navigate   = useNavigate();
   const webcamRef  = useRef(null);
@@ -28,7 +30,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post("https://api.sigmaeducation.id/api/login", {
+      const response = await axios.post(`${API_URL}api/login`, {
         identifier: dataForm.identifier,
         password:   dataForm.password,
         role:       activeRole,
@@ -54,11 +56,11 @@ export default function Login() {
 
     try {
       // 1. Ambil seluruh face_vector Dosen dari Laravel
-      const vectorsRes = await axios.get("https://api.sigmaeducation.id/api/get-all-dosen-vectors");
+      const vectorsRes = await axios.get(`${API_URL}api/get-all-dosen-vectors`);
       const dosenList  = vectorsRes.data.data; // [{ id, name, identifier, face_vector }]
 
       // 2. Kirim gambar + semua vector ke AI Server untuk dicocokkan
-      const aiRes = await axios.post("https://api.sigmaeducation.id/api/verify-face", {
+      const aiRes = await axios.post(`${API_URL}api/verify-face`, {
         image_base64: imageSrc,
         dosen_list:   dosenList,   // AI mencari sendiri siapa yang cocok
       });
@@ -71,7 +73,7 @@ export default function Login() {
       // 3. AI mengembalikan identifier pemilik wajah → minta token ke Laravel
       const matchedIdentifier = aiRes.data.identifier;
 
-      const loginRes = await axios.post("https://api.sigmaeducation.id/api/login-biometric", {
+      const loginRes = await axios.post(`${API_URL}api/login-biometric`, {
         identifier: matchedIdentifier,
       });
 
