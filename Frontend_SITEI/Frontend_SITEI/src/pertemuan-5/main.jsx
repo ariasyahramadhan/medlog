@@ -27,13 +27,37 @@ import DosenDashboard from "./pages/Dosen/DosenDashboard.jsx";
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminMahasiswa from "./pages/Admin/AdminMahasiswa.jsx";
 import AdminDosen from "./pages/Admin/AdminDosen.jsx";
+import AdminMentor from "./pages/Admin/AdminMentor.jsx";
+import AdminResetFace from "./pages/Admin/AdminResetFace.jsx";
+
 import DosenPengaturan from "./pages/Dosen/DosenPengaturan.jsx";
+import DosenRegisterFace from "./pages/Dosen/DosenRegisterFace.jsx"
+import DosenInputKasus from "./pages/Dosen/DosenInputKasus.jsx"
+import DosenRiwayatValidasi from "./pages/Dosen/DosenRiwayatValidasi.jsx";
+import DosenProgresResiden from "./pages/Dosen/DosenProgresResiden.jsx";
+import DosenVerifyPengabdian from "./pages/Dosen/DosenVerifyPengabdian.jsx";
+import DosenVerifyKegiatanIlmiah from "./pages/Dosen/DosenVerifyKegiatanIlmiah.jsx";
+import DosenBimbinganKonseling from "./pages/Dosen/DosenBimbinganKonseling.jsx";
+import DosenSoftSkill from "./pages/Dosen/DosenBimbinganSoftSkill.jsx";
+import DosenDops from "./pages/Dosen/DosenDops.jsx";
+
 import MahasiswaPengaturan from "./pages/Mahasiswa/MahasiswaPengaturan.jsx";
 import ChangePassword from "./pages/auth/ChangePassword.jsx";
 import MahasiswaPanduanLogbook from "./pages/Mahasiswa/MahasiswaPanduanLogbook.jsx"
 import MahasiswaSanksiPenghargaan from "./pages/Mahasiswa/MahasiswaSanksiPenghargaan.jsx"
 import MahasiswaPanduanEtika from "./pages/Mahasiswa/MahasiswaPanduanEtika.jsx"
 import MahasiswaPanduanTataTertib from "./pages/Mahasiswa/MahasiswaPanduanTataTertib.jsx"
+import MahasiswaInputKasus from "./pages/Mahasiswa/MahasiswaInputKasus.jsx"
+import MahasiswaKompetensi from "./pages/Mahasiswa/MahasiswaPanduanKompetesiDasardanLanjut.jsx";
+import MahasiswaRiwayatKasus from "./pages/Mahasiswa/MahasiswaRiwayatKasus.jsx"
+import MahasiswaKegiatanPengabdianMasyarakat from "./pages/Mahasiswa/MahasiswaKegiatanPengabdianMasyarakat.jsx";
+import MahasiswaKegiatanIlmiah from "./pages/Mahasiswa/MahasiswaKegiatanIlmiah.jsx";
+import MahasiswaBimbinganKonseling from "./pages/Mahasiswa/MahasiswaBimbinganKonseling.jsx";
+import MahasiswaSoftSkill from "./pages/Mahasiswa/MahasiswaSoftSkill.jsx";
+import MahasiswaDopsHistory from "./pages/Mahasiswa/MahasiswaDopsHistory.jsx";
+
+import LupaPassword from "./pages/auth/ForgotPassword.jsx"
+import ResetPassword from "./pages/auth/ResetPassword.jsx";
 
 createRoot(document.getElementById("root")).render(
   <Router>
@@ -45,6 +69,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/lupa-password" element={<LupaPassword/>}/>
+        <Route path="/reset-password" element={<ResetPassword/>}/>
       </Route>
 
       {/* ================= MAHASISWA (PROTECTED) ================= */}
@@ -56,6 +82,14 @@ createRoot(document.getElementById("root")).render(
           <Route path="/mahasiswa/sanksi" element={<MahasiswaSanksiPenghargaan/>}/>
           <Route path="/mahasiswa/etika" element={<MahasiswaPanduanEtika/>}/>
           <Route path="/mahasiswa/tata-tertib" element={<MahasiswaPanduanTataTertib />} />
+          <Route path="/mahasiswa/input-kasus" element={<MahasiswaInputKasus />} />
+          <Route path="/mahasiswa/kompetensi" element={<MahasiswaKompetensi />} />
+          <Route path="/mahasiswa/riwayat-kasus" element={<MahasiswaRiwayatKasus />} />
+          <Route path="/mahasiswa/pengabdian-masyarakat" element={<MahasiswaKegiatanPengabdianMasyarakat />} />
+          <Route path="/mahasiswa/kegiatan-ilmiah" element={<MahasiswaKegiatanIlmiah />} />
+          <Route path="/mahasiswa/bimbingan-konseling" element={<MahasiswaBimbinganKonseling />} />
+          <Route path="/mahasiswa/soft-skill" element={<MahasiswaSoftSkill />} />
+          <Route path="/mahasiswa/dops" element={<MahasiswaDopsHistory />} />
           {/* Tambahkan rute mahasiswa lainnya di sini */}
         </Route>
       </Route>
@@ -65,6 +99,15 @@ createRoot(document.getElementById("root")).render(
         <Route element={<MainLayoutDosen />}>
           <Route path="/dosen/dashboard" element={<DosenDashboard />} />
           <Route path="/dosen/pengaturan" element={<DosenPengaturan />} />
+          <Route path="/dosen/register-face" element={<DosenRegisterFace />} />
+          <Route path="/dosen/verifikasi-kasus" element={<DosenInputKasus />} />
+          <Route path="/dosen/riwayat-kasus" element={<DosenRiwayatValidasi />} />
+          <Route path="/dosen/progres-resident" element={<DosenProgresResiden />} />
+          <Route path="/dosen/pengabdian-masyarakat" element={<DosenVerifyPengabdian />} />
+          <Route path="/dosen/kegiatan-ilmiah" element={<DosenVerifyKegiatanIlmiah />} />
+          <Route path="/dosen/bimbingan-konseling" element={<DosenBimbinganKonseling />} />
+          <Route path="/dosen/soft-skill" element={<DosenSoftSkill />} />
+          <Route path="/dosen/dops" element={<DosenDops />} />
           {/* Tambahkan rute dosen lainnya di sini */}
         </Route>
       </Route>
@@ -75,6 +118,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/mahasiswa" element={<AdminMahasiswa/>} />
           <Route path="/admin/dosen" element={<AdminDosen/>} />
+          <Route path="/admin/mentor" element={<AdminMentor/>} />
+          <Route path="/admin/reset-face" element={<AdminResetFace />} />
           {/* Tambahkan rute admin lainnya di sini */}
         </Route>
       </Route>
