@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* 1. Ambil Font Inter dan Manrope dari Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+/* 2. Daftarkan ke dalam Theme Tailwind v4 */
+@theme {
+  --color-primary: #0C2340;
+  --color-secondary: #F26722;
+  --color-accent: #2E9CCA;
+
+  --color-text-satu: #2B2B2B;
+  --color-text-dua: #6B7280;
+
+  --color-bg-satu: #FFFFFF;
+  --color-bg-base: #F2F3F5;
+
+  /* Daftarkan font yang kita pakai di dashboard */
+  --font-sans: "Inter", sans-serif;
+  --font-manrope: "Manrope", sans-serif;
+  
+  /* Shortcut mapping jika diperlukan */
+  --font-heading: "Manrope", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+/* 3. Mapping Utility CSS */
+:root {
+  --primary: var(--color-primary);
+  --secondary: var(--color-secondary);
+  --accent: var(--color-accent);
+
+  --text-1: var(--color-text-satu);
+  --text-2: var(--color-text-dua);
+
+  --bg-1: var(--color-bg-satu);
+  --bg-2: var(--color-bg-base);
+
+  --heading: var(--font-heading);
+  --body: var(--font-body);
+}
+
+/* 4. Terapkan secara global pada body */
+body {
+  @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased;
+}

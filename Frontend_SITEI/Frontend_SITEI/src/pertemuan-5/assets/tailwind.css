@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/public/fonts/Inter_18pt-Regular.ttf');
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('/public/fonts/Poppins-Regular.ttf');
+}
+@font-face {
+    font-family: 'Poppins-Bold';
+    src: url('/public/fonts/Poppins-Boldttf');
+}
+@font-face {
+    font-family: 'Poppins-SemiBold';
+    src: url('/public/fonts/Poppins-SemiBoldttf');
+}
+
+
+
+@theme {
+    --font-barlow: "Barlow", sans-serif;
+    --font-poppins: "Poppins", sans-serif;
+    --font-poppins-bold: "Poppins-Bold", sans-serif;
+    --font-poppins-semibold: "Poppins-semiBold", sans-serif;
+    --font-Barlow-extrabold: "Barlow-semiBold", sans-serif;
+    --color-primary: #0C2340;
+    --color-secondary: #F26722;
+    --color-accent: #2E9CCA;
+    --color-dua: #2b2b2b;
+    --color-satu: #6B7280;
+    --color-base: #FFFFFF;
+    --color-base2: #F2F3F5;
+    --color-badge: #FFE5D0;
+    --color-alert: #D7263D;
+    --color-active: #8DF48D
+}
