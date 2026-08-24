@@ -352,6 +352,42 @@ class AttendanceController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    /**
+     * Serve an attendance photo securely via API (fixes 403 Forbidden on storage URL).
+     * GET /admin/attendance/photo?path=attendance/check_in_1_1234567890.jpg
+     */
+    public function servePhoto(Request $request)
+    {
+        $path = $request->query('path', '');
+
+        // Normalize path
+        $path = ltrim($path, '/');
+        if (str_starts_with($path, 'storage/')) {
+            $path = substr($path, 8);
+        }
+
+        // Security: only allow paths starting with 'attendance/'
+        if (empty($path) || !str_starts_with($path, 'attendance/')) {
+            return response()->json(['message' => 'Invalid photo path.'], 400);
+        }
+
+        // Prevent directory traversal
+        if (str_contains($path, '..')) {
+            return response()->json(['message' => 'Invalid photo path.'], 400);
+        }
+
+        if (!Storage::disk('public')->exists($path)) {
+            return response()->json(['message' => 'Photo not found.'], 404);
+        }
+
+        $fullPath = Storage::disk('public')->path($path);
+
+        return response()->file($fullPath, [
+            'Access-Control-Allow-Origin' => '*',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
     private function calculateDistance($lat1, $lon1, $lat2, $lon2) {
         $earthRadius = 6371000;
         $dLat = deg2rad($lat2 - $lat1);

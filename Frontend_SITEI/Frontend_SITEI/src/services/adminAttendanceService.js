@@ -13,6 +13,9 @@ export const resetAttendanceFlag = (id) =>
 export const exportAttendanceCsv = (params) =>
   api.get("/admin/attendance/export", { params, responseType: "blob" });
 
+export const getAttendancePhotoBlob = (path) =>
+  api.get("/admin/attendance/photo", { params: { path }, responseType: "blob" });
+
 // ─── Manajemen Jadwal Rotasi ─────────────────────────────────────────────────
 export const getSchedules = () =>
   api.get("/admin/schedules");

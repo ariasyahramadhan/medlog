@@ -1,11 +1,13 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
-import { 
-  FiHome, FiCheckSquare, FiClock, FiFileText, 
-  FiBookOpen, FiActivity, FiAlertCircle, FiSettings, FiLogOut, FiPlus, FiCamera,FiGlobe, FiAward, FiHeart, FiUsers, FiCpu, FiClipboard
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  FiHome, FiCheckSquare, FiClock,
+  FiActivity, FiSettings, FiLogOut, FiPlus, FiCamera,
+  FiGlobe, FiAward, FiHeart, FiCpu, FiClipboard, FiX
 } from "react-icons/fi";
 
-export default function SidebarDosen() {
+export default function SidebarDosen({ isOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,31 +28,11 @@ export default function SidebarDosen() {
     {
       title: "Penilaian",
       items: [
-        { 
-          name: "Pengabdian", 
-          icon: <FiGlobe />, 
-          path: "/dosen/pengabdian-masyarakat" 
-        },
-        { 
-          name: "Kegiatan Ilmiah", 
-          icon: <FiAward />,
-          path: "/dosen/kegiatan-ilmiah" 
-        },
-        { 
-          name: "B & K", 
-          icon: <FiHeart />, 
-          path: "/dosen/bimbingan-konseling" 
-        },
-        { 
-          name: "Bimbingan Skill", 
-          icon: <FiCpu />, 
-          path: "/dosen/soft-skill" 
-        },
-        {
-          name: "Ujian DOPS",
-          icon: <FiClipboard />,
-          path: "/dosen/dops"
-        }
+        { name: "Pengabdian", icon: <FiGlobe />, path: "/dosen/pengabdian-masyarakat" },
+        { name: "Kegiatan Ilmiah", icon: <FiAward />, path: "/dosen/kegiatan-ilmiah" },
+        { name: "B & K", icon: <FiHeart />, path: "/dosen/bimbingan-konseling" },
+        { name: "Bimbingan Skill", icon: <FiCpu />, path: "/dosen/soft-skill" },
+        { name: "Ujian DOPS", icon: <FiClipboard />, path: "/dosen/dops" }
       ]
     },
     {
@@ -89,17 +71,32 @@ export default function SidebarDosen() {
     });
   };
 
-  return (
-    <aside className="fixed left-0 top-0 h-screen flex flex-col z-40 w-64 border-r border-slate-200 bg-white font-['Manrope'] shadow-sm select-none">
+  const handleNavigate = (path) => {
+    navigate(path);
+    if (onClose) onClose();
+  };
+
+  const sidebarContent = (
+    <aside className="h-full flex flex-col w-64 border-r border-slate-200 bg-white font-['Manrope'] shadow-sm select-none">
       {/* Brand Header */}
-      <div className="p-8 flex items-center gap-3 select-none">
-        <div className="w-10 h-10 bg-[#003178] rounded-xl flex items-center justify-center text-white shadow-md transform transition-transform duration-300 hover:rotate-90">
-          <FiPlus className="text-2xl font-black" />
+      <div className="p-6 lg:p-8 flex items-center justify-between select-none">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#003178] rounded-xl flex items-center justify-center text-white shadow-md transform transition-transform duration-300 hover:rotate-90">
+            <FiPlus className="text-2xl font-black" />
+          </div>
+          <div>
+            <div className="text-lg font-extrabold tracking-tight text-slate-900 leading-none">MedLog</div>
+            <div className="text-[10px] text-[#003178] uppercase tracking-widest font-bold mt-1">Sistem Logbook</div>
+          </div>
         </div>
-        <div>
-          <div className="text-lg font-extrabold tracking-tight text-slate-900 leading-none">MedLog</div>
-          <div className="text-[10px] text-[#003178] uppercase tracking-widest font-bold mt-1">Sistem Logbook</div>
-        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors"
+          >
+            <FiX size={18} />
+          </button>
+        )}
       </div>
 
       {/* Navigation Menu */}
@@ -115,18 +112,16 @@ export default function SidebarDosen() {
                 return (
                   <button
                     key={index}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => handleNavigate(item.path)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold cursor-pointer transition-all duration-300 ease-in-out group relative overflow-hidden ${
-                      isActive 
-                        ? "bg-blue-50/80 text-[#003178] shadow-sm translate-x-1" 
+                      isActive
+                        ? "bg-blue-50/80 text-[#003178] shadow-sm translate-x-1"
                         : "text-slate-500 hover:bg-slate-50/80 hover:text-[#003178] hover:translate-x-1"
                     }`}
                   >
-                    {/* Garis indikator aktif di samping kiri tombol */}
                     <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#003178] rounded-r-lg transition-all duration-300 ease-in-out ${
                       isActive ? "opacity-100 scale-y-100" : "opacity-0 scale-y-0"
                     }`}></span>
-
                     <span className={`text-xl flex items-center transition-all duration-300 ease-in-out ${
                       isActive ? "scale-110 rotate-0" : "group-hover:scale-110 group-hover:rotate-3"
                     }`}>
@@ -147,7 +142,7 @@ export default function SidebarDosen() {
 
       {/* Footer / Action */}
       <div className="px-4 py-6 mb-2 border-t border-slate-100">
-        <button 
+        <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all duration-300 ease-in-out group font-semibold hover:translate-x-1"
         >
@@ -156,5 +151,29 @@ export default function SidebarDosen() {
         </button>
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop: fixed sidebar */}
+      <div className="hidden lg:block fixed left-0 top-0 h-screen z-40">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile: slide-in drawer */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "tween", duration: 0.28 }}
+            className="fixed left-0 top-0 h-screen z-40 lg:hidden"
+          >
+            {sidebarContent}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

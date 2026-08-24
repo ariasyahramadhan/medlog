@@ -231,18 +231,18 @@ export default function AdminPresensiJadwal() {
   return (
     <div className="space-y-7 font-['Inter'] pb-12 select-none">
       {/* ── Header ── */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 font-['Manrope']">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-['Manrope']">
         <div>
-          <h1 className="text-3xl font-extrabold text-[#003178] tracking-tight mb-1">
+          <h1 className="text-2xl lg:text-3xl font-extrabold text-[#003178] tracking-tight mb-1">
             Jadwal Rotasi Klinis
           </h1>
-          <p className="text-sm font-medium text-slate-500">
+          <p className="text-xs lg:text-sm font-medium text-slate-500">
             Atur jam kerja, hari aktif, dan penugasan mahasiswa residen ke jadwal rotasi
           </p>
         </div>
         <button
           onClick={handleOpenCreate}
-          className="flex items-center gap-2 bg-[#003178] hover:bg-blue-900 text-white px-5 py-3 rounded-2xl text-xs font-bold shadow-md shadow-blue-900/20 active:scale-95 transition-all cursor-pointer shrink-0"
+          className="flex items-center gap-2 bg-[#003178] hover:bg-blue-900 text-white px-4 py-2.5 rounded-2xl text-xs font-bold shadow-md shadow-blue-900/20 active:scale-95 transition-all cursor-pointer shrink-0 self-start sm:self-auto"
         >
           <FiPlus size={16} />
           <span>Tambah Jadwal Baru</span>
