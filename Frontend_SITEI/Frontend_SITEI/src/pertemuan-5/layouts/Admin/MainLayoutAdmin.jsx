@@ -1,22 +1,32 @@
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import SidebarAdmin from "./SidebarAdmin";
 import NavbarAdmin from "./NavbarAdmin";
 
 export default function MainLayoutAdmin() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-['Inter'] antialiased">
-      {/* Sidebar tetap di kiri */}
-      <SidebarAdmin />
+      {/* Sidebar — hidden di mobile (drawer), fixed di desktop */}
+      <SidebarAdmin isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Area Konten Utama - Memenuhi sisa lebar layar secara dinamis */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      {/* Overlay backdrop untuk mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Area Konten Utama */}
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
         {/* Navbar */}
-        <NavbarAdmin user={user} />
+        <NavbarAdmin user={user} onMenuClick={() => setSidebarOpen(true)} />
 
-        {/* Isi Halaman Dashboard Admin yang Memenuhi Layar */}
-        <main className="flex-1 p-8 mt-20 bg-[#F8FAFC] w-full h-full">
+        {/* Isi Halaman */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 mt-16 lg:mt-20 bg-[#F8FAFC] w-full h-full">
           <Outlet />
         </main>
       </div>

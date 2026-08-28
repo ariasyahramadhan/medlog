@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "../../../services/api";
 import Swal from "sweetalert2";
 import { 
   FiSearch, FiPlus, FiEdit, FiTrash2, FiX, 
@@ -55,8 +56,7 @@ export default function AdminDosen() {
   const fetchLecturers = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(API_URL, {
-        headers: getAuthHeader(),
+      const response = await api.get("/lecturers", {
         params: {
           search: search,
           department: specialtyFilter,
@@ -87,9 +87,7 @@ export default function AdminDosen() {
         const updateData = { ...formData };
         if (!updateData.password) delete updateData.password;
 
-        await axios.put(`${API_URL}/${selectedLecturer.id}`, updateData, {
-          headers: getAuthHeader()
-        });
+        await api.put(`/lecturers/${selectedLecturer.id}`, updateData);
         closeModal();
         fetchLecturers();
         customSwal.fire({
@@ -98,9 +96,7 @@ export default function AdminDosen() {
           icon: "success"
         });
       } else {
-        await axios.post(API_URL, formData, {
-          headers: getAuthHeader()
-        });
+        await api.post("/lecturers", formData);
         closeModal();
         fetchLecturers();
         customSwal.fire({
@@ -132,9 +128,7 @@ export default function AdminDosen() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await axios.delete(`${API_URL}/${id}`, {
-            headers: getAuthHeader()
-          });
+          await api.delete(`/lecturers/${id}`);
           fetchLecturers();
           customSwal.fire({
             title: "Terhapus!",

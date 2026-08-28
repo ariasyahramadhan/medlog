@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import Swal from "sweetalert2";
+import api from "../../../services/api";
 import { 
   FiUserCheck, FiSearch, FiUsers, 
   FiUserPlus, FiFilter, FiCheckCircle, FiChevronRight 
@@ -13,13 +13,9 @@ export default function AdminMentor() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveTab] = useState("Semua");
 
-  const API_URL = "https://api.sigmaeducation.id/api";
-
   const fetchContent = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/mentorship`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      });
+      const res = await api.get("/admin/mentorship");
       setData(res.data);
     } catch (err) {
       console.error(err);
@@ -33,10 +29,10 @@ export default function AdminMentor() {
   const handleUpdateMentor = async (studentId, lecturerId) => {
     if (!lecturerId) return;
     try {
-      await axios.post(`${API_URL}/admin/update-mentor`, 
-        { student_id: studentId, lecturer_id: lecturerId },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }}
-      );
+      await api.post("/admin/update-mentor", {
+        student_id: studentId,
+        lecturer_id: lecturerId
+      });
       Swal.fire({
         title: "Berhasil!",
         text: "Relasi bimbingan diperbarui.",

@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import api from '../../../services/api';
 import {
   FiClock, FiCheckSquare, FiUsers, FiShield,
   FiLoader, FiAlertTriangle, FiCheckCircle,
   FiActivity, FiBook, FiAward, FiTrendingUp,
   FiXCircle, FiFileText, FiRefreshCw
 } from 'react-icons/fi';
-
-const API_URL = 'https://api.sigmaeducation.id/api';
 
 const timeAgo = (dateStr) => {
   if (!dateStr) return '—';
@@ -40,9 +39,7 @@ export default function DashboardDosen() {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get(`${API_URL}/lecturer/dashboard-stats`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      const res = await api.get('/lecturer/dashboard-stats');
       setStats(res.data);
     } catch (err) {
       setError({

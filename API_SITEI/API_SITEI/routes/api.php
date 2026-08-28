@@ -126,15 +126,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
     Route::get('/attendance/today', [AttendanceController::class, 'getToday']);
     Route::get('/attendance/history', [AttendanceController::class, 'history']);
+    Route::get('/user/schedule/today', [ScheduleController::class, 'todayForUser']);
     
     // Phase 4 Routes
     Route::post('/user/profile', [ProfileController::class, 'update']);
     Route::post('/user/fcm-token', [ProfileController::class, 'updateFcmToken']);
-    Route::post('/admin/attendance/{id}/reset-flag', [AttendanceController::class, 'resetFlag']);
+    Route::get('/admin/attendance/photo', [AttendanceController::class, 'servePhoto']);
+    Route::get('/attendance/photo', [AttendanceController::class, 'servePhoto']);
+    Route::post('/admin/attendance/{id}/reset-flag', [AttendanceController::class, 'resetFlag'])->whereNumber('id');
     Route::get('/admin/attendance/history', [AttendanceController::class, 'adminHistory']);
     Route::get('/admin/attendance/export', [AttendanceController::class, 'exportCsv']);
-    Route::get('/admin/attendance/{id}', [AttendanceController::class, 'show']);
-    Route::delete('/admin/attendance/{id}', [AttendanceController::class, 'destroy']);
+    Route::get('/admin/attendance/{id}', [AttendanceController::class, 'show'])->whereNumber('id');
+    Route::delete('/admin/attendance/{id}', [AttendanceController::class, 'destroy'])->whereNumber('id');
 });
 
 // ─── Mahasiswa Routes ─────────────────────────────────────────────────────────

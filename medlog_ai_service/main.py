@@ -51,8 +51,11 @@ def cosine_similarity(a: list, b: list) -> float:
 
 @app.post("/extract-face")
 async def extract_face(data: FaceRegisterRequest):
+    print(f"\n[EXTRACT-FACE] Menerima request ekstraksi vektor wajah...")
     try:
         img  = decode_image(data.image_base64)
+        print(f"[EXTRACT-FACE] Gambar terdekode: shape {img.shape}")
+        
         objs = DeepFace.represent(
             img_path=img,
             model_name="Facenet",
@@ -61,22 +64,57 @@ async def extract_face(data: FaceRegisterRequest):
         )
 
         if not objs:
-            return {"success": False, "message": "Wajah tidak terdeteksi"}
+            print("[EXTRACT-FACE] ❌ Gagal: Wajah tidak terdeteksi oleh detector OpenCV.")
+            return {"success": False, "message": "Wajah tidak terdeteksi dalam foto. Pastikan pencahayaan cukup dan wajah menghadap lurus ke kamera."}
 
+        print(f"[EXTRACT-FACE] ✅ Sukses mengekstrak vector embedding ({len(objs[0]['embedding'])} dimensi).")
         return {
             "success": True,
             "vector":  objs[0]["embedding"]
         }
     except Exception as e:
-        return {"success": False, "message": str(e)}
+        print(f"[EXTRACT-FACE] ❌ Error: {e}")
+        return {"success": False, "message": f"Gagal memproses wajah: {str(e)}"}
+
+@app.post("/detect-face")
+async def detect_face(data: FaceRegisterRequest):
+    print(f"\n[DETECT-FACE] Menerima request validasi foto presensi...")
+    try:
+        img = decode_image(data.image_base64)
+        print(f"[DETECT-FACE] Gambar terdekode: shape {img.shape}")
+        
+        objs = DeepFace.represent(
+            img_path=img,
+            model_name="Facenet",
+            enforce_detection=True,
+            detector_backend="opencv"
+        )
+        if not objs:
+            print("[DETECT-FACE] ❌ Wajah tidak terdeteksi dalam foto presensi.")
+            return {
+                "face_detected": False, 
+                "message": "Wajah tidak terdeteksi. Pastikan pencahayaan terang dan seluruh wajah terlihat jelas."
+            }
+        
+        print(f"[DETECT-FACE] ✅ Wajah terdeteksi dengan baik pada foto presensi.")
+        return {"face_detected": True, "message": "Wajah terdeteksi"}
+    except Exception as e:
+        print(f"[DETECT-FACE] ⚠️ Exception: {e}")
+        return {
+            "face_detected": False, 
+            "message": f"Wajah tidak terdeteksi atau foto buram: {str(e)}"
+        }
 
 # ── Endpoint 2: Verifikasi (Login Biometrik) ──────────────────────────────────
 
 @app.post("/verify-face")
 async def verify_face(data: FaceVerifyRequest):
+    print(f"\n[VERIFY-FACE] Menerima request verifikasi login biometrik ({len(data.dosen_list)} data dosen terdaftar)...")
     try:
         # 1. Dekode & ekstrak embedding wajah dari kamera
         img  = decode_image(data.image_base64)
+        print(f"[VERIFY-FACE] Gambar terdekode: shape {img.shape}")
+        
         objs = DeepFace.represent(
             img_path=img,
             model_name="Facenet",
@@ -85,7 +123,8 @@ async def verify_face(data: FaceVerifyRequest):
         )
 
         if not objs:
-            return {"success": False, "message": "Wajah tidak terdeteksi"}
+            print("[VERIFY-FACE] ❌ Wajah tidak terdeteksi pada webcam.")
+            return {"success": False, "message": "Wajah tidak terdeteksi di kamera"}
 
         current_vector = objs[0]["embedding"]
 
@@ -93,34 +132,41 @@ async def verify_face(data: FaceVerifyRequest):
         best_score      = -1.0
         best_identifier = None
 
+        print("[VERIFY-FACE] Menghitung kemiripan terhadap daftar dosen:")
         for dosen in data.dosen_list:
             score = cosine_similarity(current_vector, dosen.face_vector)
-            print(f"[verify-face] {dosen.identifier} → score: {score:.4f}")
+            print(f"  • {dosen.identifier} -> Cosine Similarity: {score:.4f}")
             if score > best_score:
                 best_score      = score
                 best_identifier = dosen.identifier
 
-        # 3. Threshold: > 0.40 dianggap orang yang sama untuk Facenet
-        THRESHOLD = 0.85
-        is_match  = best_score > THRESHOLD
+        # 3. Threshold: Facenet cosine similarity (0.65 - 0.70 adalah threshold optimal)
+        THRESHOLD = float(os.getenv("FACE_MATCH_THRESHOLD", "0.70"))
+        is_match  = best_score >= THRESHOLD
+
+        print(f"[VERIFY-FACE] Hasil terbaik: {best_identifier} | Skor: {best_score:.4f} | Target Minimal: {THRESHOLD:.4f}")
 
         if is_match:
+            print(f"[VERIFY-FACE] ✅ MATCH DITEMUKAN! Pengguna diverifikasi sebagai {best_identifier}")
             return {
                 "success":    True,
                 "identifier": best_identifier,
-                "score":      best_score,
+                "score":      round(best_score, 4),
+                "threshold":  THRESHOLD,
                 "message":    "Verifikasi Berhasil"
             }
         else:
+            print(f"[VERIFY-FACE] ❌ DITOLAK: Skor {best_score:.4f} di bawah threshold {THRESHOLD:.4f}")
             return {
                 "success": False,
-                "score":   best_score,
-                "message": "Wajah tidak cocok dengan data yang terdaftar"
+                "score":   round(best_score, 4),
+                "threshold": THRESHOLD,
+                "message": f"Wajah tidak cocok dengan data terdaftar (Skor: {best_score:.2f} / Target: {THRESHOLD:.2f})"
             }
 
     except Exception as e:
-        print(f"[verify-face] Error: {e}")
-        raise HTTPException(status_code=500, detail="Gagal memproses biometrik")
+        print(f"[VERIFY-FACE] ❌ Error Exception: {e}")
+        raise HTTPException(status_code=500, detail=f"Gagal memproses biometrik: {str(e)}")
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 
