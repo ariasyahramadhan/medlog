@@ -7,7 +7,7 @@ import {
   FiBarChart2, FiFileText, FiPlusCircle, 
   FiSettings, FiLogOut, FiPlus, FiInfo, FiShield, 
   FiCheck, FiCheckSquare, FiChevronDown, FiTarget,
-  FiGlobe, FiAward, FiClipboard
+  FiGlobe, FiAward, FiClipboard, FiBook, FiCalendar
 } from "react-icons/fi";
 
 export default function SidebarMahasiswa() {
@@ -23,7 +23,9 @@ export default function SidebarMahasiswa() {
     { name: "Beranda", icon: <FiHome />, path: "/mahasiswa/dashboard" },
     { name: "Riwayat", icon: <FiClock />, path: "/mahasiswa/riwayat-kasus" },
     { name: "Bim & Bina", icon: <FiUsers />, path: "/mahasiswa/bimbingan-konseling" },
+    { name: "Bimbingan Tesis", icon: <FiBook />, path: "/mahasiswa/bimbingan-tesis" },
     { name: "Soft Skill", icon: <FiFileText />, path: "/mahasiswa/soft-skill" },
+    { name: "Pengajuan Izin", icon: <FiCalendar />, path: "/mahasiswa/pengajuan-izin" },
   ];
 
   // Ditambahkan menu "Evaluasi DOPS" ke dalam sub-menu Kegiatan Pendidikan

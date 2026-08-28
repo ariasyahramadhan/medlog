@@ -18,7 +18,10 @@ use App\Http\Controllers\Api\GuidanceCounselingController;
 use App\Http\Controllers\Api\SoftSkillGuidanceController;
 use App\Http\Controllers\Api\CompetencyProgressController;
 use App\Http\Controllers\Api\DopsEvaluationController;
+use App\Http\Controllers\Api\ThesisGuidanceController;
 use App\Http\Controllers\Api\AiController;
+use App\Http\Controllers\Api\LeaveRequestController;
+use App\Http\Controllers\Api\LecturerLeaveApprovalController;
 
 //Api Prensensi
 use App\Http\Controllers\Api\AttendanceController;
@@ -84,6 +87,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lecturer/dops-history', [DopsEvaluationController::class, 'getLecturerHistory']);
     Route::post('/lecturer/store-dops', [DopsEvaluationController::class, 'store']);
     Route::delete('/lecturer/delete-dops/{id}', [DopsEvaluationController::class, 'destroy']);
+    Route::get('/lecturer/my-students-thesis', [ThesisGuidanceController::class, 'getStudents']);
+    Route::get('/lecturer/history-thesis-guidances', [ThesisGuidanceController::class, 'getLecturerHistory']);
+    Route::post('/lecturer/store-thesis-guidance', [ThesisGuidanceController::class, 'storeByLecturer']);
+    Route::put('/lecturer/update-thesis-guidance/{id}', [ThesisGuidanceController::class, 'update']);
+    Route::delete('/lecturer/delete-thesis-guidance/{id}', [ThesisGuidanceController::class, 'destroy']);
+    Route::get('/lecturer/leave-requests', [LecturerLeaveApprovalController::class, 'index']);
+    Route::post('/lecturer/leave-requests/{id}/approve', [LecturerLeaveApprovalController::class, 'approve']);
+    Route::post('/lecturer/leave-requests/{id}/reject', [LecturerLeaveApprovalController::class, 'reject']);
+
     Route::get('/admin/mentorship', [MentorController::class, 'index']);
     Route::post('/admin/update-mentor', [MentorController::class, 'updateMentor']);
     Route::get('/admin/users', [FaceRegistrationController::class, 'getUsers']);
@@ -143,6 +155,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/mahasiswa/academic-activities', [AcademicActivityController::class, 'store']);
     Route::get('/mahasiswa/competency-progress', [CompetencyProgressController::class, 'getStudentProgress']);
     Route::get('/mahasiswa/dops-evaluations', [DopsEvaluationController::class, 'getStudentHistory']);
+    Route::get('/mahasiswa/thesis-guidances', [ThesisGuidanceController::class, 'getStudentHistory']);
+    Route::get('/mahasiswa/leave-requests', [LeaveRequestController::class, 'index']);
+    Route::post('/mahasiswa/leave-requests', [LeaveRequestController::class, 'store']);
+    Route::delete('/mahasiswa/leave-requests/{id}', [LeaveRequestController::class, 'destroy']);
     Route::get('/mahasiswa/guidance-counselings', function () {
         return response()->json(
             \App\Models\GuidanceCounseling::where('user_id', auth()->id())

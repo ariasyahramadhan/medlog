@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { 
   FiHome, FiCheckSquare, FiClock, FiFileText, 
-  FiBookOpen, FiActivity, FiAlertCircle, FiSettings, FiLogOut, FiPlus, FiCamera,FiGlobe, FiAward, FiHeart, FiUsers, FiCpu, FiClipboard
+  FiBookOpen, FiActivity, FiAlertCircle, FiSettings, FiLogOut, FiPlus, FiCamera,FiGlobe, FiAward, FiHeart, FiUsers, FiCpu, FiClipboard, FiCalendar
 } from "react-icons/fi";
 
 export default function SidebarDosen() {
@@ -21,6 +21,12 @@ export default function SidebarDosen() {
       items: [
         { name: "Antrian & Bukti", icon: <FiCheckSquare />, path: "/dosen/verifikasi-kasus" },
         { name: "Riwayat Validasi", icon: <FiClock />, path: "/dosen/riwayat-kasus" }
+      ]
+    },
+    {
+      title: "Persetujuan Izin",
+      items: [
+        { name: "Pengajuan Izin", icon: <FiCalendar />, path: "/dosen/pengajuan-izin" },
       ]
     },
     {
@@ -45,6 +51,11 @@ export default function SidebarDosen() {
           name: "Bimbingan Skill", 
           icon: <FiCpu />, 
           path: "/dosen/soft-skill" 
+        },
+        {
+          name: "Bimbingan Skripsi",
+          icon: <FiBookOpen />,
+          path: "/dosen/bimbingan-skripsi"
         },
         {
           name: "Ujian DOPS",

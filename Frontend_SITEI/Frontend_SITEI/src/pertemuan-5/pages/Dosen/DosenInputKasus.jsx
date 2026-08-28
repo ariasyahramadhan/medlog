@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { Check, X, ShieldAlert, Loader2, Inbox, Calendar, User, Search, RotateCcw } from 'lucide-react';
+import { Check, X, ShieldAlert, Loader2, Inbox, Calendar, User, Search, RotateCcw, CheckSquare, Square, ListChecks } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ── DEKLARASI FUNGSI HELPER GLOBAL ──
@@ -31,6 +31,10 @@ export default function DosenVerifyKasus() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all"); 
     const [typeFilter, setTypeFilter] = useState("all"); 
+
+    // ── NEW — State Seleksi Massal (Bulk Selection) ──
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [bulkLoading, setBulkLoading] = useState(false);
 
     const fetchLecturerCases = useCallback(async () => {
         try {
@@ -97,6 +101,73 @@ export default function DosenVerifyKasus() {
 
         return matchesSearch && matchesStatus && matchesType;
     });
+
+    // ── NEW — Helper Seleksi Massal ──
+    // Hanya kasus berstatus 'pending' yang bisa diverifikasi/ditolak secara massal
+    const selectablePendingCases = filteredCases.filter(c => c.status === 'pending');
+    const selectableIds = selectablePendingCases.map(c => c.id);
+    const isAllSelected = selectableIds.length > 0 && selectableIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = selectedIds.length > 0;
+
+    const toggleSelectOne = (id) => {
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    const toggleSelectAll = () => {
+        if (isAllSelected) {
+            // Batalkan seleksi hanya untuk yang sedang tampil (filtered)
+            setSelectedIds(prev => prev.filter(id => !selectableIds.includes(id)));
+        } else {
+            setSelectedIds(prev => Array.from(new Set([...prev, ...selectableIds])));
+        }
+    };
+
+    const clearSelection = () => setSelectedIds([]);
+
+    // ── NEW — Eksekusi Verifikasi / Penolakan Massal ──
+    const handleBulkVerification = (action) => {
+        if (selectedIds.length === 0) return;
+
+        const actionText = action === 'approve' ? 'Memverifikasi' : 'Menolak';
+        const confirmButtonColor = action === 'approve' ? '#10B981' : '#EF4444';
+
+        Swal.fire({
+            title: `Konfirmasi ${actionText} ${selectedIds.length} Kasus`,
+            text: `Apakah Anda yakin ingin ${action === 'approve' ? 'memverifikasi' : 'menolak'} ${selectedIds.length} kasus terpilih sekaligus? Tindakan ini tidak dapat dibatalkan secara massal.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: `Ya, ${actionText} Semua`,
+            cancelButtonText: 'Batal',
+            confirmButtonColor,
+        }).then(async (result) => {
+            if (!result.isConfirmed) return;
+
+            setBulkLoading(true);
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const id of selectedIds) {
+                try {
+                    await axios.post(`https://api.sigmaeducation.id/api/lecturer/verify-case/${id}`, { action }, {
+                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    successCount += 1;
+                } catch (err) {
+                    failCount += 1;
+                }
+            }
+
+            setBulkLoading(false);
+            setSelectedIds([]);
+            fetchLecturerCases();
+
+            if (failCount === 0) {
+                Swal.fire("Berhasil", `${successCount} kasus berhasil di${action === 'approve' ? 'verifikasi' : 'tolak'}.`, "success");
+            } else {
+                Swal.fire("Selesai Dengan Catatan", `${successCount} berhasil, ${failCount} gagal diproses. Silakan periksa kembali.`, "warning");
+            }
+        });
+    };
 
     if (isLoading) return (
         <div className="w-full h-screen flex flex-col items-center justify-center bg-slate-50 gap-3">
@@ -178,20 +249,98 @@ export default function DosenVerifyKasus() {
                         Menampilkan <span className="text-blue-600 font-black">{filteredCases.length}</span> hasil filter
                     </div>
                 </div>
+
+                {/* ── NEW — Baris Kontrol Seleksi Massal ── */}
+                {selectableIds.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                        <button
+                            onClick={toggleSelectAll}
+                            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-blue-700 transition-all"
+                        >
+                            {isAllSelected ? <CheckSquare size={15} className="text-blue-600" /> : <Square size={15} />}
+                            {isAllSelected ? 'Batalkan Pilih Semua' : `Pilih Semua Pending (${selectableIds.length})`}
+                        </button>
+                        {isSomeSelected && (
+                            <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest">
+                                {selectedIds.length} kasus terpilih
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
+
+            {/* ── NEW — Bulk Action Bar (muncul jika ada seleksi) ── */}
+            <AnimatePresence>
+                {isSomeSelected && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: 'auto' }}
+                        exit={{ opacity: 0, y: -10, height: 0 }}
+                        className="sticky top-4 z-30 mb-6 overflow-hidden"
+                    >
+                        <div className="bg-[#003178] rounded-2xl shadow-lg shadow-blue-900/20 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 text-white">
+                                <ListChecks size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest">
+                                    {selectedIds.length} Kasus Dipilih
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={clearSelection}
+                                    disabled={bulkLoading}
+                                    className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white hover:bg-white/10 transition-all disabled:opacity-40"
+                                >
+                                    Batal Pilih
+                                </button>
+                                <button
+                                    onClick={() => handleBulkVerification('reject')}
+                                    disabled={bulkLoading}
+                                    className="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-500/90 text-white hover:bg-red-500 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                                >
+                                    {bulkLoading ? <Loader2 size={12} className="animate-spin" /> : <X size={12} />} Tolak Terpilih
+                                </button>
+                                <button
+                                    onClick={() => handleBulkVerification('approve')}
+                                    disabled={bulkLoading}
+                                    className="px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                                >
+                                    {bulkLoading ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Verifikasi Terpilih
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* List Item Rendering */}
             <div className="space-y-4">
                 <AnimatePresence>
-                    {filteredCases.map((c) => (
+                    {filteredCases.map((c) => {
+                        const isSelected = selectedIds.includes(c.id);
+                        const isSelectable = c.status === 'pending';
+
+                        return (
                         <motion.div 
                             key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                            className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:border-blue-200/80 transition-all group"
+                            className={`bg-white rounded-3xl border shadow-sm overflow-hidden transition-all group ${isSelected ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200 hover:border-blue-200/80'}`}
                         >
                             {/* Card Header */}
                             <div className="p-4 bg-slate-50/40 border-b border-slate-100 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold"><User size={15} /></div>
+                                    {/* ── NEW — Checkbox Seleksi (hanya untuk kasus pending) ── */}
+                                    {isSelectable ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleSelectOne(c.id)}
+                                            className="w-8 h-8 rounded-xl bg-white border border-slate-200 text-blue-600 flex items-center justify-center hover:border-blue-300 transition-all flex-shrink-0"
+                                            title={isSelected ? 'Batalkan pilih' : 'Pilih kasus ini'}
+                                        >
+                                            {isSelected ? <CheckSquare size={16} /> : <Square size={16} className="text-slate-300" />}
+                                        </button>
+                                    ) : (
+                                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold flex-shrink-0"><User size={15} /></div>
+                                    )}
                                     <div>
                                         <h3 className="text-xs font-black text-slate-800 uppercase tracking-tight">{c.user?.name || "Residen Dokter"}</h3>
                                         <p className="text-[10px] font-bold text-slate-400">NIM: {c.user?.identifier || '-'}</p>
@@ -268,29 +417,30 @@ export default function DosenVerifyKasus() {
                                 {c.status === 'pending' ? (
                                     <>
                                         <button 
-                                            disabled={btnLoading !== null} onClick={() => handleVerification(c.id, c.user?.name, 'reject')}
-                                            className="px-5 py-2 rounded-xl text-[10px] font-black border border-red-200 text-red-600 hover:bg-red-50 active:scale-95 transition-all uppercase tracking-widest flex items-center gap-1"
+                                            disabled={btnLoading !== null || bulkLoading} onClick={() => handleVerification(c.id, c.user?.name, 'reject')}
+                                            className="px-5 py-2 rounded-xl text-[10px] font-black border border-red-200 text-red-600 hover:bg-red-50 active:scale-95 transition-all uppercase tracking-widest flex items-center gap-1 disabled:opacity-50"
                                         >
                                             Tolak
                                         </button>
                                         <button 
-                                            disabled={btnLoading !== null} onClick={() => handleVerification(c.id, c.user?.name, 'approve')}
-                                            className="px-6 py-2 rounded-xl text-[10px] font-black bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all uppercase tracking-widest flex items-center gap-1"
+                                            disabled={btnLoading !== null || bulkLoading} onClick={() => handleVerification(c.id, c.user?.name, 'approve')}
+                                            className="px-6 py-2 rounded-xl text-[10px] font-black bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all uppercase tracking-widest flex items-center gap-1 disabled:opacity-50"
                                         >
                                             {btnLoading === c.id ? <Loader2 size={12} className="animate-spin" /> : null} Verifikasi Kasus
                                         </button>
                                     </>
                                 ) : (
                                     <button 
-                                        disabled={btnLoading !== null} onClick={() => handleVerification(c.id, c.user?.name, 'pending')}
-                                        className="px-5 py-2 rounded-xl text-[10px] font-black border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 active:scale-95 transition-all uppercase tracking-widest flex items-center gap-1.5"
+                                        disabled={btnLoading !== null || bulkLoading} onClick={() => handleVerification(c.id, c.user?.name, 'pending')}
+                                        className="px-5 py-2 rounded-xl text-[10px] font-black border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 active:scale-95 transition-all uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
                                     >
                                         <RotateCcw size={12} /> Batalkan Aksi (Revoke)
                                     </button>
                                 )}
                             </div>
                         </motion.div>
-                    ))}
+                        );
+                    })}
                 </AnimatePresence>
 
                 {filteredCases.length === 0 && (

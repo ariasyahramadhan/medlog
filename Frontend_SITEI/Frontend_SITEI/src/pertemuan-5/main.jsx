@@ -40,6 +40,8 @@ import DosenVerifyKegiatanIlmiah from "./pages/Dosen/DosenVerifyKegiatanIlmiah.j
 import DosenBimbinganKonseling from "./pages/Dosen/DosenBimbinganKonseling.jsx";
 import DosenSoftSkill from "./pages/Dosen/DosenBimbinganSoftSkill.jsx";
 import DosenDops from "./pages/Dosen/DosenDops.jsx";
+import DosenThesisGuidance from "./pages/Dosen/DosenBimbinganThesisGuidance.jsx";
+import DosenPersetujuanIzin from "./pages/Dosen/DosenPersetujuanIzin.jsx";
 
 import MahasiswaPengaturan from "./pages/Mahasiswa/MahasiswaPengaturan.jsx";
 import ChangePassword from "./pages/auth/ChangePassword.jsx";
@@ -55,6 +57,8 @@ import MahasiswaKegiatanIlmiah from "./pages/Mahasiswa/MahasiswaKegiatanIlmiah.j
 import MahasiswaBimbinganKonseling from "./pages/Mahasiswa/MahasiswaBimbinganKonseling.jsx";
 import MahasiswaSoftSkill from "./pages/Mahasiswa/MahasiswaSoftSkill.jsx";
 import MahasiswaDopsHistory from "./pages/Mahasiswa/MahasiswaDopsHistory.jsx";
+import MahasiswaBimbinganThesis from "./pages/Mahasiswa/MahasiswaBimbinganThesis.jsx";
+import MahasiswaPengajuanIzin from "./pages/Mahasiswa/MahasiswaPengajuanIzin.jsx";
 
 import LupaPassword from "./pages/auth/ForgotPassword.jsx"
 import ResetPassword from "./pages/auth/ResetPassword.jsx";
@@ -90,6 +94,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="/mahasiswa/bimbingan-konseling" element={<MahasiswaBimbinganKonseling />} />
           <Route path="/mahasiswa/soft-skill" element={<MahasiswaSoftSkill />} />
           <Route path="/mahasiswa/dops" element={<MahasiswaDopsHistory />} />
+          <Route path="/mahasiswa/bimbingan-tesis" element={<MahasiswaBimbinganThesis />} />
+          <Route path="/mahasiswa/pengajuan-izin" element={<MahasiswaPengajuanIzin />} />
           {/* Tambahkan rute mahasiswa lainnya di sini */}
         </Route>
       </Route>
@@ -108,6 +114,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="/dosen/bimbingan-konseling" element={<DosenBimbinganKonseling />} />
           <Route path="/dosen/soft-skill" element={<DosenSoftSkill />} />
           <Route path="/dosen/dops" element={<DosenDops />} />
+          <Route path="/dosen/bimbingan-skripsi" element={<DosenThesisGuidance />} />
+          <Route path="/dosen/pengajuan-izin" element={<DosenPersetujuanIzin />} />
           {/* Tambahkan rute dosen lainnya di sini */}
         </Route>
       </Route>
