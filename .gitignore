@@ -37,6 +37,7 @@ bootstrap/cache/*.php
 __pycache__/
 *.py[cod]
 *.pyo
+*.log
 .venv/
 venv/
 env/

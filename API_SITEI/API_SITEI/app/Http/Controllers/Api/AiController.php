@@ -11,8 +11,9 @@ class AiController extends Controller
 {
     public function extractFace(Request $request)
     {
-        $response = Http::timeout(120)->post(
-            env('AI_SERVICE_URL') . '/extract-face',
+        $aiServiceUrl = env('AI_SERVICE_URL', 'https://ai.sigmaeducation.id');
+        $response = Http::timeout(10)->post(
+            $aiServiceUrl . '/extract-face',
             [
                 'image_base64' => $request->image_base64
             ]
@@ -31,8 +32,9 @@ class AiController extends Controller
             ->select('identifier', 'face_vector')
             ->get();
 
-        $response = Http::timeout(120)->post(
-            env('AI_SERVICE_URL') . '/verify-face',
+        $aiServiceUrl = env('AI_SERVICE_URL', 'https://ai.sigmaeducation.id');
+        $response = Http::timeout(10)->post(
+            $aiServiceUrl . '/verify-face',
             [
                 'image_base64' => $request->image_base64,
                 'dosen_list' => $dosens

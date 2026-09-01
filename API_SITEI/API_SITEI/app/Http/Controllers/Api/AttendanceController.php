@@ -23,9 +23,9 @@ class AttendanceController extends Controller
         $user = $request->user();
 
         // 1. Call Python microservice
-        $aiServiceUrl = env('AI_SERVICE_URL', 'http://127.0.0.1:8001');
+        $aiServiceUrl = env('AI_SERVICE_URL', 'https://ai.sigmaeducation.id');
         try {
-            $pythonResponse = Http::timeout(3)->post($aiServiceUrl . '/detect-face', [
+            $pythonResponse = Http::timeout(5)->post($aiServiceUrl . '/detect-face', [
                 'image_base64' => $request->photo_base64
             ]);
 
@@ -34,12 +34,12 @@ class AttendanceController extends Controller
                 if (isset($pythonData['face_detected']) && $pythonData['face_detected'] === false) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Wajah tidak terdeteksi dalam foto. Pastikan wajah terlihat jelas di kamera.'
+                        'message' => $pythonData['message'] ?? 'Verifikasi biometrik wajah gagal. Pastikan wajah terlihat jelas dan menghadap ke kamera.'
                     ], 400);
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Face detection microservice offline or unreachable: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning('Biometric verification service offline or unreachable: ' . $e->getMessage());
         }
 
         // 2. Save photo (decode base64 and store)
@@ -104,9 +104,9 @@ class AttendanceController extends Controller
         $user = $request->user();
 
         // 1. Call Python microservice
-        $aiServiceUrl = env('AI_SERVICE_URL', 'http://127.0.0.1:8001');
+        $aiServiceUrl = env('AI_SERVICE_URL', 'https://ai.sigmaeducation.id');
         try {
-            $pythonResponse = Http::timeout(3)->post($aiServiceUrl . '/detect-face', [
+            $pythonResponse = Http::timeout(5)->post($aiServiceUrl . '/detect-face', [
                 'image_base64' => $request->photo_base64
             ]);
 
@@ -115,12 +115,12 @@ class AttendanceController extends Controller
                 if (isset($pythonData['face_detected']) && $pythonData['face_detected'] === false) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Wajah tidak terdeteksi dalam foto. Pastikan wajah terlihat jelas di kamera.'
+                        'message' => $pythonData['message'] ?? 'Verifikasi biometrik wajah gagal. Pastikan wajah terlihat jelas dan menghadap ke kamera.'
                     ], 400);
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Face detection microservice offline or unreachable: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::warning('Biometric verification service offline or unreachable: ' . $e->getMessage());
         }
 
         // 2. Save photo (decode base64 and store)
