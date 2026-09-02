@@ -53,6 +53,7 @@ Route::delete('/lecturers/{id}', [LecturerController::class, 'destroy']);
 
 Route::post('/extract-face', [AiController::class, 'extractFace']);
 Route::post('/verify-face', [AiController::class, 'verifyFace']);
+Route::post('/detect-face', [AiController::class, 'detectFace']);
 
 // ─── Lecturer & Admin Routes ──────────────────────────────────────────────────
 
@@ -126,6 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
     Route::get('/attendance/today', [AttendanceController::class, 'getToday']);
     Route::get('/attendance/history', [AttendanceController::class, 'history']);
+    Route::get('/attendance/locations', [LocationAreaController::class, 'getApprovedLocations']);
     Route::get('/user/schedule/today', [ScheduleController::class, 'todayForUser']);
     
     // Phase 4 Routes

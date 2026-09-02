@@ -89,7 +89,10 @@ class AttendanceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil melakukan Check-in.'
+            'is_flagged' => $isFlagged,
+            'message' => $isFlagged 
+                ? 'Check-in berhasil disimpan (Status: Ditinjau karena berada di luar area lokasi).' 
+                : 'Berhasil melakukan Check-in.'
         ]);
     }
 
@@ -170,7 +173,10 @@ class AttendanceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil melakukan Check-out.'
+            'is_flagged' => $isFlagged,
+            'message' => $isFlagged 
+                ? 'Check-out berhasil disimpan (Status: Ditinjau karena berada di luar area lokasi).' 
+                : 'Berhasil melakukan Check-out.'
         ]);
     }
 

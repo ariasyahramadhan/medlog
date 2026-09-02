@@ -72,7 +72,7 @@ export default function DosenProgresResiden() {
     );
 
     return (
-        <div className="p-6 bg-[#F8FAFC] min-h-screen font-['Manrope']">
+        <div className="w-full font-['Manrope'] select-none">
             {/* Header Panel */}
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>

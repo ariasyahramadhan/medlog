@@ -158,4 +158,21 @@ class LocationAreaController extends Controller
         $user->locationAreas()->sync($request->location_ids ?? []);
         return response()->json(['message' => 'User locations synced']);
     }
+
+    public function getApprovedLocations(Request $request)
+    {
+        $user = $request->user();
+        $areas = LocationArea::where('status', 'approved')->whereHas('users', function($q) use ($user) {
+            $q->where('users.id', $user->id);
+        })->get();
+
+        if ($areas->isEmpty()) {
+            $areas = LocationArea::where('status', 'approved')->get();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $areas
+        ]);
+    }
 }

@@ -21,12 +21,12 @@ export default function MainLayoutStudent() {
       )}
 
       {/* Area Konten Utama */}
-      <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
+      <div className="flex-1 min-w-0 max-w-full flex flex-col min-h-screen lg:ml-64 overflow-x-hidden">
         {/* Navbar */}
         <NavbarMahasiswa user={user} onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Isi Halaman */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 mt-16 lg:mt-20 bg-[#F8FAFC] w-full h-full">
+        <main className="flex-1 w-full min-w-0 max-w-full p-4 sm:p-6 lg:p-8 mt-16 lg:mt-20 bg-[#F8FAFC]">
           <Outlet />
         </main>
       </div>

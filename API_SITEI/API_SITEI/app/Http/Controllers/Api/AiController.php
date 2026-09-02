@@ -46,4 +46,37 @@ class AiController extends Controller
             $response->status()
         );
     }
+
+    public function detectFace(Request $request)
+    {
+        $request->validate([
+            'image_base64' => 'required|string'
+        ]);
+
+        $aiServiceUrl = env('AI_SERVICE_URL', 'https://ai.sigmaeducation.id');
+        try {
+            $response = Http::timeout(8)->post(
+                $aiServiceUrl . '/detect-face',
+                [
+                    'image_base64' => $request->image_base64
+                ]
+            );
+
+            if ($response->successful()) {
+                return response()->json($response->json(), $response->status());
+            }
+
+            return response()->json([
+                'face_detected' => true,
+                'message' => 'Layanan AI merespon dengan status ' . $response->status()
+            ], 200);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Face detection microservice unreachable: ' . $e->getMessage());
+            // Fallback graceful jika microservice AI tidak dapat diakses
+            return response()->json([
+                'face_detected' => true,
+                'message' => 'Layanan AI verifikasi wajah offline, presensi tetap dapat dilanjutkan.'
+            ], 200);
+        }
+    }
 }

@@ -118,18 +118,18 @@ export default function MahasiswaRiwayatPresensi() {
 
       {/* ── Stat Cards ── */}
       {!loading && !error && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center">
-            <p className="text-2xl font-extrabold text-[#003178]">{checkIns.length}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Hari Masuk</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-center">
+            <p className="text-xl sm:text-2xl font-extrabold text-[#003178]">{checkIns.length}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Hari Masuk</p>
           </div>
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center">
-            <p className="text-2xl font-extrabold text-emerald-600">{checkOuts.length}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Hari Pulang</p>
+          <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-center">
+            <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">{checkOuts.length}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Hari Pulang</p>
           </div>
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center">
-            <p className="text-2xl font-extrabold text-amber-600">{flagged.length}</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Ditinjau</p>
+          <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 text-center">
+            <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{flagged.length}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Ditinjau</p>
           </div>
         </div>
       )}
@@ -151,45 +151,47 @@ export default function MahasiswaRiwayatPresensi() {
           <p className="font-bold text-slate-400 text-sm">Tidak ada catatan presensi di bulan ini.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {logs.map((log) => (
             <div
               key={log.id}
-              className={`bg-white border rounded-2xl px-5 py-4 flex items-start gap-4 hover:shadow-sm transition-shadow ${
+              className={`bg-white border rounded-2xl p-4 sm:px-5 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:shadow-sm transition-shadow ${
                 log.is_flagged ? "border-amber-200" : "border-slate-200"
               }`}
             >
-              {/* Ikon tipe */}
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg ${
-                log.type === "check_in" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
-              }`}>
-                {log.type === "check_in" ? <FiCheckCircle /> : <FiXCircle />}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <TypeBadge type={log.type} />
-                  <FlagBadge isFlagged={log.is_flagged} reason={log.flag_reason} />
+              <div className="flex items-start gap-3.5 w-full sm:w-auto min-w-0">
+                {/* Ikon tipe */}
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg ${
+                  log.type === "check_in" ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600"
+                }`}>
+                  {log.type === "check_in" ? <FiCheckCircle /> : <FiXCircle />}
                 </div>
-                <p className="text-sm font-bold text-slate-700">{formatDateTime(log.attended_at)}</p>
-                {log.location_area?.name && (
-                  <p className="text-[11px] text-slate-400 font-bold mt-0.5 flex items-center gap-1">
-                    <FiMapPin size={10} /> {log.location_area.name}
-                  </p>
-                )}
-                {log.is_flagged && log.flag_reason && (
-                  <p className="text-[11px] text-amber-600 font-bold mt-1 bg-amber-50 rounded-lg px-2 py-1">
-                    ⚠ {log.flag_reason}
-                  </p>
-                )}
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                    <TypeBadge type={log.type} />
+                    <FlagBadge isFlagged={log.is_flagged} reason={log.flag_reason} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-700">{formatDateTime(log.attended_at)}</p>
+                  {log.location_area?.name && (
+                    <p className="text-[11px] text-slate-400 font-bold mt-0.5 flex items-center gap-1 truncate">
+                      <FiMapPin size={10} className="shrink-0" /> {log.location_area.name}
+                    </p>
+                  )}
+                  {log.is_flagged && log.flag_reason && (
+                    <p className="text-[11px] text-amber-700 font-bold mt-1 bg-amber-50 rounded-lg px-2 py-1 leading-snug">
+                      ⚠ {log.flag_reason}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Koordinat */}
               {log.latitude && log.longitude && (
-                <div className="text-right shrink-0">
-                  <p className="text-[10px] font-mono text-slate-400 leading-relaxed">
-                    {parseFloat(log.latitude).toFixed(5)}<br />
-                    {parseFloat(log.longitude).toFixed(5)}
+                <div className="text-left sm:text-right shrink-0 border-t sm:border-t-0 border-slate-100 pt-2 sm:pt-0 w-full sm:w-auto flex sm:flex-col justify-between sm:justify-start items-center sm:items-end">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest sm:hidden">Koordinat:</span>
+                  <p className="text-[10px] font-mono text-slate-400 leading-tight">
+                    {parseFloat(log.latitude).toFixed(5)}, {parseFloat(log.longitude).toFixed(5)}
                   </p>
                 </div>
               )}

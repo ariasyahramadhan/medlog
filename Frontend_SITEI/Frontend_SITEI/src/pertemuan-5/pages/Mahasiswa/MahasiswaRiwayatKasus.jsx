@@ -467,10 +467,10 @@ export default function RiwayatKasus() {
     const verifiedCount = cases.filter(c => c.status === 'verified').length;
 
     return (
-        <div className="p-6 bg-[#F8FAFC] min-h-screen font-['Manrope']">
+        <div className="w-full font-['Manrope'] select-none">
 
             {/* Page Title */}
-            <div className="mb-6 flex items-start justify-between">
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
                         <FileText size={20} className="text-blue-600" /> Riwayat Kasus Saya
@@ -483,7 +483,7 @@ export default function RiwayatKasus() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setShowCetakModal(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#003178] hover:bg-[#1a4db5] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-900/20"
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003178] hover:bg-[#1a4db5] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-900/20 shrink-0 cursor-pointer"
                 >
                     <Printer size={14} />
                     Cetak Kasus
@@ -496,7 +496,7 @@ export default function RiwayatKasus() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 <StatCard label="Total Kasus"  value={stats.total}     icon={<TrendingUp size={18}    />} />
                 <StatCard label="Verified"     value={stats.verified}  icon={<CheckCircle2 size={18} />} color="text-emerald-600" />
                 <StatCard label="Pending"      value={stats.pending}   icon={<Clock size={18}         />} color="text-amber-600" />
@@ -504,11 +504,11 @@ export default function RiwayatKasus() {
             </div>
 
             {/* Progres Kurikulum */}
-            <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-3xl mb-6">
+            <div className="bg-white border border-slate-200 shadow-sm p-5 sm:p-6 rounded-3xl mb-6">
                 <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-1.5">
                     <Award size={14} className="text-[#003178]" /> Progres Jumlah Kasus Minimal Stase Kurikulum
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                     {[
                         { count: getGroupedCasesCount(groupKompetensiDasarUtama), target: 1015, label: 'Kompetensi Dasar' },
                         { count: getGroupedCasesCount(subAnestesiBedahUmum),       target: 620,  label: 'Anestesi Bedah Umum' },
@@ -517,11 +517,11 @@ export default function RiwayatKasus() {
                         { count: getGroupedCasesCount(subBedahSaraf),              target: 35,   label: 'Anestesi Bedah Saraf' },
                         { count: getGroupedCasesCount(subKondisiKhususLanjut),     target: 35,   label: 'Kompetensi Lanjut' },
                     ].map((item, i) => (
-                        <div key={i} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                            <div className="text-lg font-black text-slate-800 font-mono">{item.count} / {item.target}</div>
-                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{item.label}</div>
+                        <div key={i} className="p-3.5 sm:p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                            <div className="text-base sm:text-lg font-black text-slate-800 font-mono">{item.count} / {item.target}</div>
+                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 leading-snug">{item.label}</div>
                             {/* Progress bar mini */}
-                            <div className="mt-2 h-1 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="mt-2 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-[#003178] rounded-full transition-all"
                                     style={{ width: `${Math.min((item.count / item.target) * 100, 100)}%` }}

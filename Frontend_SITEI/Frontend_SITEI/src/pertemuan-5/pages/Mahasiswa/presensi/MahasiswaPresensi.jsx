@@ -25,12 +25,11 @@ const formatDate = (dateStr) => {
   });
 };
 
-// ─── Komponen Utama ───────────────────────────────────────────────────────────
 export default function MahasiswaPresensi() {
   const {
-    schedule, loading, submitting, error,
+    schedule, locations, loading, submitting, error,
     hasCheckedIn, hasCheckedOut, checkInLog, checkOutLog,
-    submitCheckIn, submitCheckOut, refresh,
+    getMatchedArea, submitCheckIn, submitCheckOut, refresh,
   } = useAttendance();
 
   const geo = useGeolocation();
@@ -38,6 +37,10 @@ export default function MahasiswaPresensi() {
 
   const [photo, setPhoto] = useState(null);       // base64 foto
   const [step, setStep] = useState("status");      // "status" | "camera" | "confirm"
+
+  // ─── Cek Geofencing Area ──────────────────────────────────────────────────
+  const matchedArea = geo.latitude && geo.longitude ? getMatchedArea(geo.latitude, geo.longitude) : null;
+  const isOutside = Boolean(geo.latitude && geo.longitude && locations && locations.length > 0 && !matchedArea);
 
   // ─── Callbacks ──────────────────────────────────────────────────────────────
   const handleCapture = useCallback((base64) => {
@@ -60,14 +63,35 @@ export default function MahasiswaPresensi() {
       return;
     }
 
+    // ── POPUP WARNING JIKA DI LUAR LOKASI ──
+    if (isOutside) {
+      const confirmAlert = await Swal.fire({
+        title: "Presensi di Luar Lokasi?",
+        html: "<p class='text-xs sm:text-sm text-slate-600 leading-relaxed text-left sm:text-center'>Titik koordinat Anda terdeteksi <b>berada di luar area lokasi presensi resmi</b>.<br/><br/>Presensi tetap dapat dikirimkan dengan status <b>Ditinjau</b>, namun Anda perlu <b>menghubungi Admin</b> untuk disetujui.<br/><br/>Apakah Anda ingin tetap mengirim presensi sekarang?</p>",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#003178",
+        cancelButtonColor: "#94a3b8",
+        confirmButtonText: "Ya, Tetap Kirim",
+        cancelButtonText: "Periksa Lokasi Lagi",
+      });
+
+      if (!confirmAlert.isConfirmed) {
+        return;
+      }
+    }
+
     const action = hasCheckedIn ? submitCheckOut : submitCheckIn;
     const result = await action(geo.latitude, geo.longitude, photo);
 
     if (result.success) {
+      const isFlaggedResult = result.is_flagged || isOutside;
       Swal.fire({
-        title: "Presensi Berhasil!",
-        text: result.message,
-        icon: "success",
+        title: isFlaggedResult ? "Presensi Dikirim (Ditinjau)" : "Presensi Berhasil!",
+        html: isFlaggedResult
+          ? "<div class='text-xs sm:text-sm text-slate-600 space-y-2 text-left sm:text-center'><p>" + (result.message || 'Presensi berhasil disimpan.') + "</p><div class='p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-bold leading-relaxed'>⚠️ Catatan: Karena berada di luar area resmi, status presensi Anda ditandai <b>Ditinjau</b>. Silakan hubungi Admin untuk persetujuan.</div></div>"
+          : (result.message || "Presensi Anda berhasil dicatat."),
+        icon: isFlaggedResult ? "info" : "success",
         confirmButtonColor: "#003178"
       });
       setPhoto(null);
@@ -80,7 +104,7 @@ export default function MahasiswaPresensi() {
         confirmButtonColor: "#003178"
       });
     }
-  }, [photo, geo, hasCheckedIn, submitCheckIn, submitCheckOut]);
+  }, [photo, geo, isOutside, hasCheckedIn, submitCheckIn, submitCheckOut]);
 
   const handleStartAbsen = useCallback(() => {
     setStep("camera");
@@ -209,6 +233,8 @@ export default function MahasiswaPresensi() {
         accuracy={geo.accuracy}
         error={geo.error}
         loading={geo.loading}
+        matchedArea={matchedArea}
+        isOutside={isOutside}
         onRefresh={geo.refresh}
       />
 
@@ -227,7 +253,7 @@ export default function MahasiswaPresensi() {
               <button
                 onClick={handleStartAbsen}
                 disabled={!schedule}
-                className="w-full bg-[#003178] text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 hover:bg-blue-800 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full bg-[#003178] text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20 hover:bg-blue-800 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 <FiCamera size={18} />
                 {hasCheckedIn ? "Lakukan Check-out" : "Lakukan Check-in"}
@@ -266,7 +292,7 @@ export default function MahasiswaPresensi() {
               </h2>
               <button
                 onClick={handleCancel}
-                className="text-xs text-slate-400 hover:text-slate-600 font-bold transition-colors"
+                className="text-xs text-slate-400 hover:text-slate-600 font-bold transition-colors cursor-pointer"
               >
                 Batal
               </button>
@@ -292,26 +318,41 @@ export default function MahasiswaPresensi() {
               <img src={photo} alt="Preview presensi" className="w-full object-cover" />
             </div>
 
+            {/* Warning jika berada di luar lokasi */}
+            {isOutside && (
+              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex items-start gap-3">
+                <FiAlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={18} />
+                <div className="text-xs text-amber-900/90 space-y-1">
+                  <p className="font-extrabold text-amber-800">Perhatian: Anda di Luar Area Presensi</p>
+                  <p className="leading-relaxed text-[11px]">
+                    Presensi Anda tetap dapat dikirim, namun akan tercatat berstatus <strong>Ditinjau</strong>. Harap segera hubungi Admin setelah submit untuk disetujui.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Ringkasan lokasi */}
             {geo.latitude && (
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                <FiMapPin size={13} className="text-[#003178]" />
-                <span>{geo.latitude.toFixed(5)}, {geo.longitude.toFixed(5)}</span>
-                {geo.accuracy && <span className="text-slate-400">(±{Math.round(geo.accuracy)}m)</span>}
+              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <FiMapPin size={14} className={isOutside ? "text-amber-600" : "text-emerald-600"} />
+                <span className="truncate">
+                  {matchedArea ? matchedArea.name : "Di Luar Area"} ({geo.latitude.toFixed(5)}, {geo.longitude.toFixed(5)})
+                </span>
+                {geo.accuracy && <span className="text-slate-400 font-normal shrink-0">(±{Math.round(geo.accuracy)}m)</span>}
               </div>
             )}
 
             <div className="flex gap-3">
               <button
                 onClick={handleReset}
-                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Ambil Ulang
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex-2 flex-1 py-3 rounded-xl bg-[#003178] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-800 active:scale-95 transition-all disabled:opacity-60"
+                className="flex-2 flex-1 py-3 rounded-xl bg-[#003178] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-blue-800 active:scale-95 transition-all disabled:opacity-60 cursor-pointer"
               >
                 {submitting ? (
                   <><FiLoader className="animate-spin" size={15} /> Mengirim...</>

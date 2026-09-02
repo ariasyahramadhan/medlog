@@ -298,10 +298,10 @@ export default function MahasiswaBimbinganKonselingView() {
     );
 
     return (
-        <div className="p-6 bg-[#F8FAFC] min-h-screen font-['Manrope']">
+        <div className="w-full font-['Manrope'] select-none">
 
             {/* Header Banner */}
-            <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2 uppercase">
                         <HeartHandshake className="text-blue-600" size={24} /> Logbook Bimbingan & Konseling
