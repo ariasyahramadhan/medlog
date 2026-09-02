@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// Ambil base URL dari env (bisa "http://localhost:8000", "http://localhost:8000/", "https://api.sigmaeducation.id", dll)
-const rawBaseUrl = import.meta.env.VITE_API_URL || "https://api.sigmaeducation.id";
+// Ambil base URL dari env (bisa "http://localhost:8000", "https://appmedlog.sigmaeducation.id", dll)
+const rawBaseUrl = import.meta.env.VITE_API_URL || "https://appmedlog.sigmaeducation.id";
 
 // Bersihkan trailing slash
 const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, "");
